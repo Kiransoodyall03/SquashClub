@@ -5,12 +5,12 @@ import { getFunctions } from 'firebase/functions';
 
 // Replace with your Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCifrqszkwPzpbMA9sy3RhKjGSPCS-wVDo",
+  authDomain: "squashclub-e8a0c.firebaseapp.com",
+  projectId: "squashclub-e8a0c",
+  storageBucket: "squashclub-e8a0c.firebasestorage.app",
+  messagingSenderId: "397341468790",
+  appId: "1:397341468790:web:5fce36506579b808a91757",
 };
 
 // Initialize Firebase
