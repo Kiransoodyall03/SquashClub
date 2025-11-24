@@ -12,11 +12,11 @@ import Register from './pages/Register';
 import PlayerDashboard from './pages/PlayerDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import TournamentDetails from './pages/TournamentDetails';
-import Profile from './pages/profile';
-import JoinTournament from './pages/jointournament';
+import Profile from './pages/Profile';
+import JoinTournament from './pages/JoinTournament';
 
 // Components
-import Navigation from './components/navigation';
+import Navigation from './components/Navigation';
 import LoadingScreen from './components/LoadingScreen';
 
 import './App.css';

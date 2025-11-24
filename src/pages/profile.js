@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { updateUserProfile } from '../firebase/firestore';
 
-const Profile = ({ user, userProfile, onProfileUpdate }) => {
+const Profile = ({ user, userProfile }) => {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     firstName: userProfile?.firstName || '',
@@ -32,14 +32,11 @@ const Profile = ({ user, userProfile, onProfileUpdate }) => {
   const handleSave = async () => {
     setLoading(true);
     
-    const updatedProfileData = { ...userProfile, ...formData };
-    await updateUserProfile(user.uid, updatedProfileData);
+    await updateUserProfile(user.uid, formData);
     
     setEditMode(false);
     setLoading(false);
-    if (onProfileUpdate) {
-      onProfileUpdate(updatedProfileData);
-    }
+    window.location.reload(); // Reload to get updated profile
   };
 
   const handleCancel = () => {

@@ -21,7 +21,7 @@ import {
   getUserProfile
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
-import CreateTournamentModal from '../components/createtournamentmodal';
+import CreateTournamentModal from '../components/CreateTournamentModal';
 
 const OwnerDashboard = () => {
   const [tournaments, setTournaments] = useState([]);

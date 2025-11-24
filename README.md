@@ -1,4 +1,4 @@
-# SquashClub# 🏸 Squash Club Tournament Management System
+# 🏸 Squash Club Tournament Management System
 
 A modern web application for managing squash club tournaments with an ELO rating system. This system helps clubs organize Wednesday social tournaments, automatically create balanced groups based on player ratings, and track player progress over time.
 
