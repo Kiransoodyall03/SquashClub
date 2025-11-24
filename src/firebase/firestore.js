@@ -5,16 +5,16 @@ import {
   getDoc, 
   getDocs, 
   updateDoc, 
-  deleteDoc, 
   query, 
   where, 
   orderBy, 
   serverTimestamp,
   arrayUnion,
   arrayRemove,
-  increment
+  increment,
+  addDoc
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 
 // User Profile Operations
 export const createUserProfile = async (userId, profileData) => {
@@ -51,6 +51,26 @@ export const getUserProfile = async (userId) => {
   }
 };
 
+export const createClub = async (clubData) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const clubRef = await addDoc(collection(db, 'clubs'), {
+      ...clubData,
+      ownerId: user.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('Club created successfully:', clubRef.id);
+    return { success: true, id: clubRef.id };
+  } catch (error) {
+    console.error('Error creating club:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const updateUserProfile = async (userId, updates) => {
   try {
     const userRef = doc(db, 'users', userId);
@@ -65,15 +85,18 @@ export const updateUserProfile = async (userId, updates) => {
   }
 };
 
-// Tournament Operations
 export const createTournament = async (tournamentData) => {
   try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+    
     const tournamentRef = doc(collection(db, 'tournaments'));
     const tournamentId = tournamentRef.id;
     
     await setDoc(tournamentRef, {
       ...tournamentData,
       id: tournamentId,
+      createdBy: user.uid, // Add creator ID
       status: 'upcoming',
       participants: [],
       matches: [],
@@ -81,6 +104,7 @@ export const createTournament = async (tournamentData) => {
       updatedAt: serverTimestamp()
     });
     
+    console.log('Tournament created successfully:', tournamentId);
     return { success: true, tournamentId };
   } catch (error) {
     console.error('Error creating tournament:', error);
@@ -102,20 +126,45 @@ export const getTournament = async (tournamentId) => {
     return null;
   }
 };
-
+export const getTournamentsByOwner = async (ownerId) => {
+  try {
+    const q = query(
+      collection(db, 'tournaments'),
+      where('createdBy', '==', ownerId),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const tournaments = [];
+    querySnapshot.forEach((doc) => {
+      tournaments.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return tournaments;
+  } catch (error) {
+    console.error('Error getting tournaments by owner:', error);
+    return [];
+  }
+};
 export const getTournaments = async (filters = {}) => {
   try {
     let q = collection(db, 'tournaments');
+    const constraints = [];
     
     if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
+      constraints.push(where('status', '==', filters.status));
     }
     
     if (filters.date) {
-      q = query(q, where('date', '==', filters.date));
+      constraints.push(where('date', '==', filters.date));
     }
     
-    q = query(q, orderBy('date', 'desc'));
+    // Add ordering
+    constraints.push(orderBy('date', 'desc'));
+    
+    if (constraints.length > 0) {
+      q = query(collection(db, 'tournaments'), ...constraints);
+    }
     
     const querySnapshot = await getDocs(q);
     const tournaments = [];
@@ -137,6 +186,7 @@ export const updateTournament = async (tournamentId, updates) => {
       ...updates,
       updatedAt: serverTimestamp()
     });
+    console.log('Tournament updated successfully');
     return { success: true };
   } catch (error) {
     console.error('Error updating tournament:', error);
@@ -200,27 +250,33 @@ export const leaveTournament = async (tournamentId, userId, userProfile) => {
   }
 };
 
-// Match Operations
 export const createMatch = async (matchData) => {
   try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+    
     const matchRef = doc(collection(db, 'matches'));
     const matchId = matchRef.id;
     
     await setDoc(matchRef, {
       ...matchData,
       id: matchId,
+      createdBy: user.uid, // Add creator ID
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
     
-    // Add match to tournament
-    const tournamentRef = doc(db, 'tournaments', matchData.tournamentId);
-    await updateDoc(tournamentRef, {
-      matches: arrayUnion(matchId),
-      updatedAt: serverTimestamp()
-    });
+    // Add match to tournament if tournamentId exists
+    if (matchData.tournamentId) {
+      const tournamentRef = doc(db, 'tournaments', matchData.tournamentId);
+      await updateDoc(tournamentRef, {
+        matches: arrayUnion(matchId),
+        updatedAt: serverTimestamp()
+      });
+    }
     
+    console.log('Match created successfully:', matchId);
     return { success: true, matchId };
   } catch (error) {
     console.error('Error creating match:', error);
@@ -239,6 +295,7 @@ export const updateMatchScore = async (matchId, scores, winner) => {
       updatedAt: serverTimestamp()
     });
     
+    console.log('Match score updated successfully');
     return { success: true };
   } catch (error) {
     console.error('Error updating match score:', error);

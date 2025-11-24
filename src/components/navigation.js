@@ -94,7 +94,7 @@ const Navigation = ({ user, userProfile }) => {
         </motion.div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .navigation {
           background: var(--white);
           box-shadow: var(--shadow-sm);
