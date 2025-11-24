@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { auth } from './firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getUserProfile } from './firebase/firestore';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 // Pages
 import Landing from './pages/Landing';
@@ -12,6 +12,8 @@ import Register from './pages/Register';
 import PlayerDashboard from './pages/PlayerDashboard';
 import OwnerDashboard from './pages/OwnerDashboard';
 import TournamentDetails from './pages/TournamentDetails';
+import Tournaments from './pages/Tournaments';
+import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import JoinTournament from './pages/JoinTournament';
 
@@ -72,10 +74,22 @@ function App() {
               )
             } 
           />
+          
+          <Route 
+            path="/tournaments" 
+            element={user ? <Tournaments userProfile={userProfile} /> : <Navigate to="/login" />} 
+          />
+          
           <Route 
             path="/tournament/:id" 
             element={user ? <TournamentDetails userProfile={userProfile} /> : <Navigate to="/login" />} 
           />
+          
+          <Route 
+            path="/leaderboard" 
+            element={user ? <Leaderboard userProfile={userProfile} /> : <Navigate to="/login" />} 
+          />
+          
           <Route 
             path="/profile" 
             element={user ? <Profile user={user} userProfile={userProfile} /> : <Navigate to="/login" />} 
