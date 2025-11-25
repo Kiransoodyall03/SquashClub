@@ -7,7 +7,6 @@ import {
   Users, 
   Trophy,
   ChevronRight,
-  Filter,
   Search
 } from 'lucide-react';
 import { getTournaments } from '../firebase/firestore';
@@ -16,7 +15,7 @@ const Tournaments = ({ userProfile }) => {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, upcoming, ongoing, completed
+  const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -46,9 +45,9 @@ const Tournaments = ({ userProfile }) => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      upcoming: { label: 'Upcoming', class: 'badge-primary' },
-      ongoing: { label: 'Ongoing', class: 'badge-success' },
-      completed: { label: 'Completed', class: 'badge-gray' }
+      upcoming: { label: 'Upcoming', class: 'badge-upcoming' },
+      active: { label: 'Active', class: 'badge-active' },
+      completed: { label: 'Completed', class: 'badge-completed' }
     };
     return badges[status] || badges.upcoming;
   };
@@ -96,13 +95,18 @@ const Tournaments = ({ userProfile }) => {
             </div>
             
             <div className="filter-tabs">
-              {['all', 'upcoming', 'ongoing', 'completed'].map(status => (
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'upcoming', label: 'Upcoming' },
+                { key: 'active', label: 'Active' },
+                { key: 'completed', label: 'Completed' }
+              ].map(({ key, label }) => (
                 <button
-                  key={status}
-                  onClick={() => setFilter(status)}
-                  className={`filter-tab ${filter === status ? 'active' : ''}`}
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`filter-tab ${filter === key ? 'active' : ''}`}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {label}
                 </button>
               ))}
             </div>
@@ -262,6 +266,29 @@ const Tournaments = ({ userProfile }) => {
           margin: 0;
           font-size: 1.25rem;
           flex: 1;
+        }
+
+        .badge {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border-radius: var(--radius-sm);
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .badge-upcoming {
+          background: rgba(33, 150, 243, 0.1);
+          color: #2196F3;
+        }
+
+        .badge-active {
+          background: rgba(76, 175, 80, 0.1);
+          color: var(--success);
+        }
+
+        .badge-completed {
+          background: rgba(158, 158, 158, 0.1);
+          color: var(--gray);
         }
 
         .tournament-details {

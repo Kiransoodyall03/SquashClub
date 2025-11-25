@@ -180,7 +180,7 @@ const Landing = () => {
         </motion.div>
       </section>
 
-      <style jsx>{`
+      <style>{`
         .landing-page {
           min-height: 100vh;
         }

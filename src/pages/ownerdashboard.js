@@ -39,27 +39,28 @@ const OwnerDashboard = () => {
     loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
-    
-    // Load tournaments
-    const allTournaments = await getTournaments();
-    setTournaments(allTournaments);
-    
-    // Load player leaderboard
-    const leaderboardData = await getLeaderboard(100);
-    setPlayers(leaderboardData);
-    
-    // Calculate stats
-    setStats({
-      totalTournaments: allTournaments.length,
-      activePlayers: leaderboardData.filter(p => p.matchesPlayed > 0).length,
-      upcomingTournaments: allTournaments.filter(t => t.status === 'upcoming').length,
-      completedTournaments: allTournaments.filter(t => t.status === 'completed').length
-    });
-    
-    setLoading(false);
-  };
+const loadDashboardData = async () => {
+  setLoading(true);
+  
+  // Load all tournaments (status will be auto-updated)
+  const allTournaments = await getTournaments();
+  setTournaments(allTournaments);
+  
+  // Load player leaderboard
+  const leaderboardData = await getLeaderboard(100);
+  setPlayers(leaderboardData);
+  
+  // Calculate stats with correct status names
+  setStats({
+    totalTournaments: allTournaments.length,
+    activePlayers: leaderboardData.filter(p => p.matchesPlayed > 0).length,
+    upcomingTournaments: allTournaments.filter(t => t.status === 'upcoming').length,
+    activeTournaments: allTournaments.filter(t => t.status === 'active').length,
+    completedTournaments: allTournaments.filter(t => t.status === 'completed').length
+  });
+  
+  setLoading(false);
+};
 
   const handleCreateTournament = async (tournamentData) => {
     const result = await createTournament({
@@ -195,7 +196,7 @@ const OwnerDashboard = () => {
             <div className="filter-tabs">
               <button className="filter-tab active">All</button>
               <button className="filter-tab">Upcoming</button>
-              <button className="filter-tab">In Progress</button>
+              <button className="filter-tab">Active</button>
               <button className="filter-tab">Completed</button>
             </div>
           </div>
@@ -322,7 +323,7 @@ const OwnerDashboard = () => {
         />
       )}
 
-      <style jsx>{`
+      <style>{`
         .owner-dashboard {
           background: var(--off-white);
         }
@@ -372,7 +373,7 @@ const OwnerDashboard = () => {
         .filter-tab.active {
           background: var(--primary);
           border-color: var(--primary);
-          color: var(--white);
+          color: var(--green);
         }
 
         .tournaments-grid {

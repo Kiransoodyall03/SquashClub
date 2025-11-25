@@ -271,7 +271,7 @@ const Register = () => {
         </div>
       </motion.div>
 
-      <style jsx>{`
+      <style>{`
         .auth-container-large {
           max-width: 550px;
         }

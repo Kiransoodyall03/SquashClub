@@ -265,7 +265,7 @@ const PlayerDashboard = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .dashboard {
           min-height: calc(100vh - 80px);
           padding: var(--spacing-2xl) 0;

@@ -250,7 +250,7 @@ const Profile = ({ user, userProfile }) => {
         </motion.div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .profile-page {
           min-height: calc(100vh - 70px);
           padding: var(--spacing-2xl) 0;

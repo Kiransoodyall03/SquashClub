@@ -247,7 +247,7 @@ const JoinTournament = () => {
         </motion.div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .join-tournament-page {
           min-height: 100vh;
           display: flex;
