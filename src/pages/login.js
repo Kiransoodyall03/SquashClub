@@ -1,3 +1,5 @@
+// src/components/Login.js
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -29,7 +31,12 @@ const Login = () => {
     const result = await loginWithEmail(formData.email, formData.password);
     
     if (result.success) {
-      navigate('/dashboard');
+      // Redirect based on role
+      if (result.profile?.role === 'owner') {
+        navigate('/owner-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError(result.error);
     }
@@ -44,7 +51,17 @@ const Login = () => {
     const result = await loginWithGoogle();
     
     if (result.success) {
-      navigate('/dashboard');
+      if (result.isNewUser) {
+        // New user needs to complete registration
+        navigate('/register');
+      } else {
+        // Existing user - redirect based on role
+        if (result.profile?.role === 'owner') {
+          navigate('/owner-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }
     } else {
       setError(result.error);
     }
@@ -137,6 +154,7 @@ const Login = () => {
           </div>
 
           <button 
+            type="button"
             onClick={handleGoogleLogin}
             className="btn btn-google btn-full"
             disabled={loading}
@@ -317,6 +335,10 @@ const Login = () => {
           border-top-color: var(--white);
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

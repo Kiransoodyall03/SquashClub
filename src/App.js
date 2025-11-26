@@ -16,7 +16,7 @@ import Tournaments from './pages/Tournaments';
 import Leaderboard from './pages/Leaderboard';
 import Profile from './pages/Profile';
 import JoinTournament from './pages/JoinTournament';
-
+import CompleteProfile from './components/CompleteProfile'
 // Components
 import Navigation from './components/Navigation';
 import LoadingScreen from './components/LoadingScreen';
@@ -27,7 +27,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-
+const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
@@ -35,20 +35,49 @@ function App() {
         // Fetch user profile from Firestore
         const profile = await getUserProfile(authUser.uid);
         setUserProfile(profile);
+        setNeedsProfileCompletion(true);
+                if (profile) {
+          setUserProfile(profile);
+          setNeedsProfileCompletion(false);
+        } else {
+          // User is authenticated but has no profile
+          console.log('⚠️ User authenticated but no profile - needs completion');
+          setUserProfile(null);
+          setNeedsProfileCompletion(true);
+        }
       } else {
         setUser(null);
         setUserProfile(null);
+        setNeedsProfileCompletion(false);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
-
+  const refreshUserProfile = async () => {
+    if (user) {
+      const profile = await getUserProfile(user.uid);
+      if (profile) {
+        setUserProfile(profile);
+        setNeedsProfileCompletion(false);
+      }
+    }
+  };
   if (loading) {
     return <LoadingScreen />;
   }
-
+  // If user is logged in but needs to complete profile, show CompleteProfile
+  if (user && needsProfileCompletion) {
+    return (
+      <Router>
+        <CompleteProfile 
+          user={user} 
+          onProfileComplete={refreshUserProfile}
+        />
+      </Router>
+    );
+  }
   return (
     <Router>
       <div className="app">

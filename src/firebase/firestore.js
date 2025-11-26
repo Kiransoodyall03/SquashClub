@@ -16,41 +16,62 @@ import {
   addDoc
 } from 'firebase/firestore';
 import { db, auth } from './config';
-
+import { 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult
+} from 'firebase/auth';
+import { googleProvider } from './config';
 // User Profile Operations
 export const createUserProfile = async (userId, profileData) => {
   try {
+    console.log('createUserProfile called for:', userId);
+    console.log('Profile data:', profileData);
+    
     const userRef = doc(db, 'users', userId);
-    await setDoc(userRef, {
+    const userData = {
       ...profileData,
       elo: 1200,
       matchesPlayed: 0,
       matchesWon: 0,
       tournamentsPlayed: 0,
+      tournaments: [], // Add this missing field
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    console.log('Writing user data to Firestore:', userData);
+    await setDoc(userRef, userData);
+    console.log('✅ User profile created successfully');
+    
     return { success: true };
   } catch (error) {
     console.error('Error creating user profile:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
     return { success: false, error: error.message };
   }
 };
 
 export const getUserProfile = async (userId) => {
   try {
+    console.log('getUserProfile called for:', userId);
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
+      console.log('✅ User profile found');
       return { id: userSnap.id, ...userSnap.data() };
     }
+    
+    console.log('❌ User profile not found');
     return null;
   } catch (error) {
     console.error('Error getting user profile:', error);
     return null;
   }
 };
+
 
 export const createClub = async (clubData) => {
   try {
@@ -452,6 +473,73 @@ export const completeTournament = async (tournamentId) => {
     return { success: false, error: error.message };
   }
 };
+
+// Get tournaments a player has participated in
+export const getPlayerTournaments = async (userId) => {
+  try {
+    const allTournaments = await getTournaments();
+    
+    // Filter tournaments where user is a participant
+    const playerTournaments = allTournaments.filter(tournament => 
+      tournament.participants?.some(p => p.userId === userId)
+    );
+    
+    // Sort by date (most recent first)
+    playerTournaments.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    return playerTournaments;
+  } catch (error) {
+    console.error('Error getting player tournaments:', error);
+    return [];
+  }
+};
+
+// Get detailed player match history with opponent info
+export const getPlayerMatchHistory = async (userId) => {
+  try {
+    const matches = await getMatchesByPlayer(userId);
+    
+    // Enhance matches with win/loss info
+    const enhancedMatches = matches.map(match => {
+      const isPlayer1 = match.player1Id === userId;
+      const won = match.winner === userId;
+      const opponentName = isPlayer1 ? match.player2Name : match.player1Name;
+      const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+      
+      // Calculate player's score vs opponent's score
+      let playerScore = 0;
+      let opponentScore = 0;
+      
+      match.scores?.forEach(score => {
+        if (isPlayer1) {
+          playerScore += score.player1 || 0;
+          opponentScore += score.player2 || 0;
+        } else {
+          playerScore += score.player2 || 0;
+          opponentScore += score.player1 || 0;
+        }
+      });
+      
+      return {
+        ...match,
+        won,
+        opponentName,
+        opponentId,
+        playerScore,
+        opponentScore,
+        scoreDisplay: match.scores?.map(s => 
+          isPlayer1 ? `${s.player1}-${s.player2}` : `${s.player2}-${s.player1}`
+        ).join(', ') || '-'
+      };
+    });
+    
+    return enhancedMatches;
+  } catch (error) {
+    console.error('Error getting player match history:', error);
+    return [];
+  }
+};
+
 export const getTournamentSummary = async (tournamentId) => {
   try {
     const tournament = await getTournament(tournamentId);
