@@ -8,7 +8,10 @@ import {
   LogOut, 
   Menu,
   X,
-  BarChart3
+  BarChart3,
+  Swords,
+  Users,
+  Shield
 } from 'lucide-react';
 import { logout } from '../firebase/auth';
 
@@ -24,12 +27,26 @@ const Navigation = ({ user, userProfile }) => {
     }
   };
 
+  const isOwner = userProfile?.role === 'owner';
+
+  // Base nav items for all users
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <Home className="w-5 h-5" /> },
     { path: '/tournaments', label: 'Tournaments', icon: <Trophy className="w-5 h-5" /> },
+    { path: '/matches', label: 'Matches', icon: <Swords className="w-5 h-5" /> },
     { path: '/leaderboard', label: 'Leaderboard', icon: <BarChart3 className="w-5 h-5" /> },
     { path: '/profile', label: 'Profile', icon: <User className="w-5 h-5" /> }
   ];
+
+  // Add Members link for owners only
+  if (isOwner) {
+    navItems.splice(4, 0, { 
+      path: '/members', 
+      label: 'Members', 
+      icon: <Users className="w-5 h-5" />,
+      ownerOnly: true
+    });
+  }
 
   return (
     <nav className="navigation">
@@ -45,17 +62,21 @@ const Navigation = ({ user, userProfile }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+                className={`nav-link ${location.pathname === item.path ? 'active' : ''} ${item.ownerOnly ? 'owner-link' : ''}`}
               >
                 {item.icon}
                 <span>{item.label}</span>
+                {item.ownerOnly && <Shield className="w-3 h-3 owner-badge" />}
               </Link>
             ))}
           </div>
 
           <div className="nav-actions">
             <div className="user-info">
-              <span className="user-name">{userProfile?.firstName}</span>
+              <span className="user-name">
+                {userProfile?.firstName}
+                {isOwner && <span className="role-tag">Owner</span>}
+              </span>
               <span className="user-elo">ELO: {userProfile?.elo || 1200}</span>
             </div>
             <button onClick={handleLogout} className="btn btn-ghost btn-small">
@@ -84,11 +105,12 @@ const Navigation = ({ user, userProfile }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`mobile-nav-link ${location.pathname === item.path ? 'active' : ''}`}
+              className={`mobile-nav-link ${location.pathname === item.path ? 'active' : ''} ${item.ownerOnly ? 'owner-link' : ''}`}
               onClick={() => setMobileMenuOpen(false)}
             >
               {item.icon}
               <span>{item.label}</span>
+              {item.ownerOnly && <Shield className="w-3 h-3 owner-badge" />}
             </Link>
           ))}
         </motion.div>
@@ -123,7 +145,7 @@ const Navigation = ({ user, userProfile }) => {
 
         .nav-menu {
           display: flex;
-          gap: var(--spacing-sm);
+          gap: var(--spacing-xs);
         }
 
         .nav-link {
@@ -135,6 +157,8 @@ const Navigation = ({ user, userProfile }) => {
           text-decoration: none;
           border-radius: var(--radius-md);
           transition: all var(--transition-base);
+          font-size: 0.9rem;
+          position: relative;
         }
 
         .nav-link:hover {
@@ -145,6 +169,24 @@ const Navigation = ({ user, userProfile }) => {
         .nav-link.active {
           background: var(--gradient-primary);
           color: var(--white);
+        }
+
+        .nav-link.owner-link {
+          border: 1px solid transparent;
+        }
+
+        .nav-link.owner-link:not(.active) {
+          border-color: rgba(255, 107, 53, 0.3);
+          background: rgba(255, 107, 53, 0.05);
+        }
+
+        .owner-badge {
+          margin-left: 2px;
+          opacity: 0.7;
+        }
+
+        .nav-link.active .owner-badge {
+          opacity: 1;
         }
 
         .nav-actions {
@@ -163,6 +205,19 @@ const Navigation = ({ user, userProfile }) => {
         .user-name {
           font-weight: 600;
           color: var(--secondary);
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+        }
+
+        .role-tag {
+          font-size: 0.625rem;
+          padding: 2px 6px;
+          background: var(--gradient-primary);
+          color: var(--white);
+          border-radius: var(--radius-sm);
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .user-elo {
@@ -207,6 +262,25 @@ const Navigation = ({ user, userProfile }) => {
         .mobile-nav-link.active {
           background: var(--gradient-primary);
           color: var(--white);
+        }
+
+        .mobile-nav-link.owner-link:not(.active) {
+          background: rgba(255, 107, 53, 0.05);
+          border-left: 3px solid var(--primary);
+        }
+
+        @media (max-width: 900px) {
+          .nav-link span {
+            display: none;
+          }
+          
+          .nav-link {
+            padding: var(--spacing-sm);
+          }
+
+          .owner-badge {
+            display: none;
+          }
         }
 
         @media (max-width: 768px) {
