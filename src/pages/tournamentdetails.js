@@ -1,33 +1,18 @@
 // src/components/TournamentDetails.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, 
-  Clock, 
-  Users, 
-  Trophy, 
-  CheckCircle,
-  XCircle,
-  Edit2,
-  AlertCircle,
-  Play,
-  RefreshCw,
-  Flag,
-  Award
+  Calendar, Clock, Users, Trophy, CheckCircle, XCircle, 
+  Edit2, AlertCircle, Play, RefreshCw, Flag, Award, 
+  Settings, Save
 } from 'lucide-react';
 import { 
-  getTournament, 
-  joinTournament,
-  leaveTournament,
-  updateMatchScore,
-  getMatchesByTournament,
-  generateTournamentGroups,
-  generateGroupMatches,
-  updateTournament,
-  completeTournament,
-  getTournamentSummary
+  getTournament, joinTournament, leaveTournament, updateMatchScore,
+  getMatchesByTournament, generateTournamentGroups, generateGroupMatches,
+  updateTournament, completeTournament, getTournamentSummary,
+  updateTournamentGroupSettings 
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
 import ScoreEntryModal from '../components/scoreEntryModal';
@@ -48,7 +33,8 @@ const TournamentDetails = ({ userProfile }) => {
   const [completingTournament, setCompletingTournament] = useState(false);
   const [completionResult, setCompletionResult] = useState(null);
   const [completionError, setCompletionError] = useState('');
-
+  const [activeSettingsGroup, setActiveSettingsGroup] = useState(null); 
+  const [savingSettings, setSavingSettings] = useState(false);
   const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
@@ -132,7 +118,7 @@ const TournamentDetails = ({ userProfile }) => {
     setStartingTournament(false);
   };
 
-  // Generate matches for all groups (owner only)
+// Update your handleGenerateMatches function
   const handleGenerateMatches = async () => {
     if (!isOwner || matches.length > 0) return;
     
@@ -146,9 +132,13 @@ const TournamentDetails = ({ userProfile }) => {
       
       for (let i = 0; i < generatedGroups.length; i++) {
         const groupName = `Group ${String.fromCharCode(65 + i)}`;
+        
+        // CHANGED: Use the helper to get specific group format
+        const specificFormat = getGroupFormat(groupName);
+
         await generateGroupMatches(
           id,
-          tournament.format,
+          specificFormat, // Use the specific format here
           generatedGroups[i],
           groupName
         );
@@ -255,6 +245,44 @@ const TournamentDetails = ({ userProfile }) => {
       </div>
     );
   }
+
+  // Helper to determine the format for a specific group
+  const getGroupFormat = (groupName) => {
+    if (tournament.groupSettings && tournament.groupSettings[groupName]) {
+      return tournament.groupSettings[groupName].format;
+    }
+    return tournament.format; // Fallback to global default
+  };
+
+  const handleUpdateGroupFormat = async (groupName, newFormat) => {
+    setSavingSettings(true);
+    // If returning to default (null), or setting a specific format
+    const settings = newFormat === 'default' ? null : { format: newFormat };
+    
+    // If "default" is selected, we effectively remove the override by setting it to null
+    // However, firestore update needs a value. 
+    // If your backend logic in step 1 allows simple overwrites, we just save the object.
+    
+    // Logic: If 'default', we pass null to indicate removal of override, 
+    // but for the UI flow let's just save the format string or null.
+    
+    await updateTournamentGroupSettings(id, groupName, settings);
+    await loadTournamentData(); // Reload to see changes
+    setActiveSettingsGroup(null);
+    setSavingSettings(false);
+  };
+
+  // OPTIONS FOR THE DROPDOWN
+  const formatOptions = [
+    '1 game to 21',
+    '2 games to 15',
+    '3 games to 11',
+    'Best of 3 to 11',
+    'Best of 3 to 15',
+    'Best of 5 to 11',
+    'Best of 5 to 15',
+    'Best of 7 to 11'
+  ];
 
   return (
     <div className="tournament-details">
@@ -531,24 +559,86 @@ const TournamentDetails = ({ userProfile }) => {
             transition={{ delay: 0.3 }}
           >
             <h2>Tournament Groups</h2>
-            <div className="groups-grid">
-              {groups.map((group, groupIndex) => (
-                <div key={groupIndex} className="group-card card">
-                  <h3>Group {String.fromCharCode(65 + groupIndex)}</h3>
-                  <div className="group-players">
-                    {group.map((player, playerIndex) => (
-                      <div 
-                        key={player.userId} 
-                        className={`group-player ${player.userId === currentUserId ? 'is-me' : ''}`}
-                      >
-                        <span className="player-seed">{playerIndex + 1}</span>
-                        <span className="player-name">{player.name}</span>
-                        <span className="player-elo">{player.elo}</span>
+<div className="groups-grid">
+              {groups.map((group, groupIndex) => {
+                const groupName = `Group ${String.fromCharCode(65 + groupIndex)}`;
+                const currentFormat = getGroupFormat(groupName);
+                const isCustom = tournament.groupSettings?.[groupName] != null;
+
+                return (
+                  <div key={groupIndex} className="group-card card">
+                    <div className="group-header">
+                      <div className="group-title-stack">
+                        <h3>{groupName}</h3>
+                        <span className="group-rules-text">
+                          {isCustom ? (
+                            <span className="text-highlight">{currentFormat}</span>
+                          ) : (
+                            <span className="text-muted">Default ({currentFormat})</span>
+                          )}
+                        </span>
                       </div>
-                    ))}
+                      
+                      {/* SETTINGS ICON (Only for Owner) */}
+                      {isOwner && (
+                        <div className="settings-wrapper">
+                          <button 
+                            className={`btn-icon ${activeSettingsGroup === groupName ? 'active' : ''}`}
+                            onClick={() => setActiveSettingsGroup(activeSettingsGroup === groupName ? null : groupName)}
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+
+                          {/* POPOVER MENU */}
+                          <AnimatePresence>
+                            {activeSettingsGroup === groupName && (
+                              <motion.div 
+                                className="settings-popover"
+                                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                              >
+                                <h4>Edit Scoring</h4>
+                                <div className="popover-options">
+                                  <button 
+                                    className={`popover-option ${!isCustom ? 'selected' : ''}`}
+                                    onClick={() => handleUpdateGroupFormat(groupName, 'default')}
+                                  >
+                                    Use Default
+                                  </button>
+                                  <div className="divider"></div>
+                                  {formatOptions.map(fmt => (
+                                    <button
+                                      key={fmt}
+                                      className={`popover-option ${currentFormat === fmt && isCustom ? 'selected' : ''}`}
+                                      onClick={() => handleUpdateGroupFormat(groupName, fmt)}
+                                    >
+                                      {fmt}
+                                    </button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="group-players">
+                      {group.map((player, playerIndex) => (
+                        <div 
+                          key={player.userId} 
+                          className={`group-player ${player.userId === currentUserId ? 'is-me' : ''}`}
+                        >
+                          <span className="player-seed">{playerIndex + 1}</span>
+                          <span className="player-name">{player.name}</span>
+                          <span className="player-elo">{player.elo}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
@@ -1388,6 +1478,103 @@ const TournamentDetails = ({ userProfile }) => {
           .owner-actions .btn {
             width: 100%;
           }
+          
+          /* Group Header & Settings */
+        .group-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: var(--spacing-md);
+        }
+
+        .group-title-stack h3 {
+          margin: 0;
+          line-height: 1.2;
+        }
+
+        .group-rules-text {
+          font-size: 0.75rem;
+        }
+
+        .text-muted { color: var(--gray); }
+        .text-highlight { color: var(--primary); font-weight: 600; }
+
+        .settings-wrapper {
+          position: relative;
+        }
+
+        .btn-icon {
+          background: transparent;
+          border: none;
+          padding: 4px;
+          border-radius: 4px;
+          cursor: pointer;
+          color: var(--gray);
+          transition: all 0.2s;
+        }
+
+        .btn-icon:hover, .btn-icon.active {
+          background: var(--light-gray);
+          color: var(--primary);
+        }
+
+        /* Popover Styles */
+        .settings-popover {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          width: 200px;
+          background: white;
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-xl);
+          border: 1px solid var(--light-gray);
+          z-index: 100;
+          padding: var(--spacing-sm) 0;
+          margin-top: 4px;
+        }
+
+        .settings-popover h4 {
+          margin: 0;
+          padding: 4px var(--spacing-md);
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          color: var(--gray);
+          border-bottom: 1px solid var(--light-gray);
+          margin-bottom: 4px;
+        }
+
+        .popover-options {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .popover-option {
+          background: none;
+          border: none;
+          text-align: left;
+          padding: 8px var(--spacing-md);
+          font-size: 0.875rem;
+          cursor: pointer;
+          color: var(--dark-gray);
+          transition: background 0.2s;
+        }
+
+        .popover-option:hover {
+          background: var(--light-gray);
+        }
+
+        .popover-option.selected {
+          background: rgba(33, 150, 243, 0.1);
+          color: var(--primary);
+          font-weight: 600;
+        }
+
+        .divider {
+          height: 1px;
+          background: var(--light-gray);
+          margin: 4px 0;
+        }
+          
         }
       `}</style>
     </div>

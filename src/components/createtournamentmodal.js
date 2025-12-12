@@ -1,3 +1,5 @@
+//CreateTournamentModal.js
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar, Clock, Users, Trophy, Settings } from 'lucide-react';
@@ -20,7 +22,10 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
     '2 games to 15',
     '3 games to 11',
     'Best of 3 to 11',
-    'Best of 5 to 9',
+    'Best of 3 to 15',
+    'Best of 5 to 11',
+    'Best of 5 to 15',
+    'Best of 7 to 11',
     'Custom'
   ];
 

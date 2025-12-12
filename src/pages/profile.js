@@ -456,7 +456,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                     <span className="match-score">{match.scoreDisplay}</span>
                   </div>
                   <div className="match-meta">
-                    <span className="match-tournament">{match.groupName}</span>
+                    <span className="match-tournament">{match.contextDisplay}</span>
                     <span className="match-format">{match.format}</span>
                   </div>
                 </div>

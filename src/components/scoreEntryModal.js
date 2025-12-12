@@ -10,22 +10,55 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Get format configuration
+  // UPDATED: Logic to handle all specific formats
   const getFormatConfig = (format) => {
-    switch (format) {
-      case '1 game to 21':
-        return { type: 'fixed', games: 1, pointsToWin: 21 };
-      case '2 games to 15':
-        return { type: 'fixed', games: 2, pointsToWin: 15 };
-      case '3 games to 11':
-        return { type: 'fixed', games: 3, pointsToWin: 11 };
-      case 'Best of 3 to 11':
-        return { type: 'bestOf', games: 3, gamesToWin: 2, pointsToWin: 11 };
-      case 'Best of 5 to 9':
-        return { type: 'bestOf', games: 5, gamesToWin: 3, pointsToWin: 9 };
-      default:
-        return { type: 'fixed', games: 1, pointsToWin: 21 };
+    // Default fallback
+    const config = { type: 'fixed', games: 1, pointsToWin: 21 };
+
+    if (!format) return config;
+
+    // Normalizing string for easier matching
+    const fmt = format.toLowerCase();
+
+    // === Best Of Formats ===
+    if (fmt.startsWith('best of')) {
+      config.type = 'bestOf';
+      
+      // Determine Max Games & Games Needed to Win
+      if (fmt.includes('best of 3')) {
+        config.games = 3;
+        config.gamesToWin = 2;
+      } else if (fmt.includes('best of 5')) {
+        config.games = 5;
+        config.gamesToWin = 3;
+      } else if (fmt.includes('best of 7')) {
+        config.games = 7;
+        config.gamesToWin = 4;
+      }
+
+      // Determine Points per Game
+      if (fmt.includes('to 15')) config.pointsToWin = 15;
+      else if (fmt.includes('to 11')) config.pointsToWin = 11;
+      else if (fmt.includes('to 9')) config.pointsToWin = 9;
+      else config.pointsToWin = 11; // Default for best of
+    } 
+    // === Fixed Game Formats ===
+    else {
+      config.type = 'fixed';
+      
+      if (fmt.includes('1 game')) {
+        config.games = 1;
+        config.pointsToWin = 21;
+      } else if (fmt.includes('2 games')) {
+        config.games = 2;
+        config.pointsToWin = 15;
+      } else if (fmt.includes('3 games')) {
+        config.games = 3;
+        config.pointsToWin = 11;
+      }
     }
+
+    return config;
   };
 
   const formatConfig = getFormatConfig(match.format);
@@ -35,6 +68,8 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
     if (match.scores && match.scores.length > 0) {
       setScores(match.scores);
     } else {
+      // For "Best Of", we start with the minimum games needed to win (e.g. 2 for Bo3)
+      // For "Fixed", we show all games immediately
       const initialGames = formatConfig.type === 'bestOf' 
         ? formatConfig.gamesToWin
         : formatConfig.games;
@@ -46,6 +81,12 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
       setScores(initialScores);
     }
   }, [match]);
+
+  // Recalculate winner whenever scores change
+  useEffect(() => {
+    const calculatedWinner = calculateWinner(scores);
+    setWinner(calculatedWinner);
+  }, [scores]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -65,24 +106,27 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
     if (validScores.length === 0) return null;
 
     if (formatConfig.type === 'fixed') {
+      // Check if all games are entered
       if (validScores.length < formatConfig.games) return null;
 
       if (formatConfig.games === 1) {
         const p1 = parseInt(validScores[0].player1);
         const p2 = parseInt(validScores[0].player2);
-        if (p1 === p2) return null;
+        if (p1 === p2) return null; // Draw not allowed in 1 game usually
         return p1 > p2 ? match.player1Id : match.player2Id;
       } else {
+        // Aggregate score for multi-game fixed (e.g. 2 games to 15)
         let p1Total = 0;
         let p2Total = 0;
         validScores.forEach(score => {
           p1Total += parseInt(score.player1);
           p2Total += parseInt(score.player2);
         });
-        if (p1Total === p2Total) return null;
+        if (p1Total === p2Total) return null; // Handle draw logic if needed
         return p1Total > p2Total ? match.player1Id : match.player2Id;
       }
     } else {
+      // Best Of Logic
       let p1Wins = 0;
       let p2Wins = 0;
       validScores.forEach(score => {
@@ -103,21 +147,24 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
     if (formatConfig.type !== 'bestOf') return false;
     if (scores.length >= formatConfig.games) return false;
     
+    // Check wins so far
     let p1Wins = 0;
     let p2Wins = 0;
-    scores.forEach(score => {
-      if (score.player1 !== '' && score.player2 !== '') {
-        const p1 = parseInt(score.player1);
-        const p2 = parseInt(score.player2);
-        if (p1 > p2) p1Wins++;
-        else if (p2 > p1) p2Wins++;
-      }
+    
+    // Only count fully entered games
+    const validScores = scores.filter(s => s.player1 !== '' && s.player2 !== '');
+    
+    validScores.forEach(score => {
+      const p1 = parseInt(score.player1);
+      const p2 = parseInt(score.player2);
+      if (p1 > p2) p1Wins++;
+      else if (p2 > p1) p2Wins++;
     });
 
-    const allFilled = scores.every(s => s.player1 !== '' && s.player2 !== '');
-    const noWinnerYet = p1Wins < formatConfig.gamesToWin && p2Wins < formatConfig.gamesToWin;
+    const hasWinner = p1Wins >= formatConfig.gamesToWin || p2Wins >= formatConfig.gamesToWin;
     
-    return allFilled && noWinnerYet;
+    // Only show "Add Game" if previous games are filled AND we don't have a winner yet
+    return validScores.length === scores.length && !hasWinner;
   };
 
   // Add another game input
@@ -133,9 +180,6 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
       [player]: value
     };
     setScores(newScores);
-
-    const calculatedWinner = calculateWinner(newScores);
-    setWinner(calculatedWinner);
   };
 
   // Check if form is valid
@@ -145,6 +189,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
         scores.every(s => s.player1 !== '' && s.player2 !== '');
       return allFilled && winner !== null;
     } else {
+      // For best of, we need a winner determined
       return winner !== null;
     }
   };
@@ -259,7 +304,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
                     <input
                       type="number"
                       min="0"
-                      max={formatConfig.pointsToWin + 10}
+                      max={formatConfig.pointsToWin + 20} // Allow overtime
                       value={score.player1}
                       onChange={(e) => handleScoreChange(index, 'player1', e.target.value)}
                       className="score-input"
@@ -268,7 +313,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
                     <input
                       type="number"
                       min="0"
-                      max={formatConfig.pointsToWin + 10}
+                      max={formatConfig.pointsToWin + 20} // Allow overtime
                       value={score.player2}
                       onChange={(e) => handleScoreChange(index, 'player2', e.target.value)}
                       className="score-input"
@@ -514,6 +559,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             text-align: center;
             transition: border-color 0.2s ease;
             -moz-appearance: textfield;
+            box-sizing: border-box;
           }
 
           .score-input::-webkit-outer-spin-button,

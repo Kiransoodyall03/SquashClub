@@ -220,8 +220,25 @@ export const calculateTournamentStatus = (tournament) => {
   }
 };
 
-// Update tournament status if needed
-// FIXED: Don't override manually completed tournaments
+// Add this to src/firebase/firestore.js
+
+export const updateTournamentGroupSettings = async (tournamentId, groupName, settings) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const updateData = {
+      [`groupSettings.${groupName}`]: settings,
+      updatedAt: serverTimestamp()
+    };
+    
+    await updateDoc(tournamentRef, updateData);
+    console.log(`Updated settings for ${groupName}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating group settings:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 export const updateTournamentStatusIfNeeded = async (tournamentId, tournament) => {
   // If already manually completed, don't change status
   if (tournament.status === 'completed' && tournament.completedAt) {
@@ -676,40 +693,81 @@ export const getPlayerTournaments = async (userId) => {
 // Get detailed player match history with opponent info
 export const getPlayerMatchHistory = async (userId) => {
   try {
-    const matches = await getMatchesByPlayer(userId);
-    
-    const enhancedMatches = matches.map(match => {
-      const isPlayer1 = match.player1Id === userId;
-      const won = match.winner === userId;
-      const opponentName = isPlayer1 ? match.player2Name : match.player1Name;
-      const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-      
-      let playerScore = 0;
-      let opponentScore = 0;
-      
-      match.scores?.forEach(score => {
-        if (isPlayer1) {
-          playerScore += score.player1 || 0;
-          opponentScore += score.player2 || 0;
-        } else {
-          playerScore += score.player2 || 0;
-          opponentScore += score.player1 || 0;
-        }
-      });
-      
-      return {
-        ...match,
-        won,
-        opponentName,
-        opponentId,
-        playerScore,
-        opponentScore,
-        scoreDisplay: match.scores?.map(s => 
-          isPlayer1 ? `${s.player1}-${s.player2}` : `${s.player2}-${s.player1}`
-        ).join(', ') || '-'
-      };
+    const tournamentMatches = await getMatchesByPlayer(userId);
+    const individualMatches = await getIndividualMatchesByPlayer(userId);
+
+    const allMatches = [...tournamentMatches, ...individualMatches];
+
+    const enhancedMatches = allMatches.map(match => {
+      // Tournament match
+      if (match.tournamentId) {
+        const isPlayer1 = match.player1Id === userId;
+        const won = match.winner === userId;
+        const opponentName = isPlayer1 ? match.player2Name : match.player1Name;
+        
+        let playerScore = 0;
+        let opponentScore = 0;
+        
+        match.scores?.forEach(score => {
+          if (isPlayer1) {
+            playerScore += score.player1 || 0;
+            opponentScore += score.player2 || 0;
+          } else {
+            playerScore += score.player2 || 0;
+            opponentScore += score.player1 || 0;
+          }
+        });
+
+        return {
+          ...match,
+          won,
+          opponentName,
+          playerScore,
+          opponentScore,
+          scoreDisplay: match.scores?.map(s => 
+            isPlayer1 ? `${s.player1}-${s.player2}` : `${s.player2}-${s.player1}`
+          ).join(', ') || '-',
+          contextDisplay: match.groupName || 'Tournament'
+        };
+      } 
+      // Individual match
+      else {
+        const isUserInTeam1 = match.team1.some(p => p.id === userId);
+        const won = (isUserInTeam1 && match.winner === 'team1') || (!isUserInTeam1 && match.winner === 'team2');
+        
+        const opponentTeam = isUserInTeam1 ? match.team2 : match.team1;
+        const opponentName = opponentTeam.map(p => p.name).join(' & ');
+
+        let playerScore = 0;
+        let opponentScore = 0;
+
+        match.scores?.forEach(score => {
+          if (isUserInTeam1) {
+            playerScore += score.team1 || 0;
+            opponentScore += score.team2 || 0;
+          } else {
+            playerScore += score.team2 || 0;
+            opponentScore += score.team1 || 0;
+          }
+        });
+
+        return {
+          ...match,
+          won,
+          opponentName,
+          playerScore,
+          opponentScore,
+          scoreDisplay: match.scores?.map(s => 
+            isUserInTeam1 ? `${s.team1}-${s.team2}` : `${s.team2}-${s.team1}`
+          ).join(', ') || '-',
+          contextDisplay: `${match.matchMode.charAt(0).toUpperCase() + match.matchMode.slice(1)} ${match.matchType}`
+        };
+      }
     });
-    
+
+    // Sort all matches by date
+    enhancedMatches.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
     return enhancedMatches;
   } catch (error) {
     console.error('Error getting player match history:', error);
@@ -1047,38 +1105,82 @@ export const generateGroupMatches = async (tournamentId, tournamentFormat, group
 // Statistics Operations
 export const getPlayerStatistics = async (userId) => {
   try {
-    const userProfile = await getUserProfile(userId);
-    
-    if (!userProfile) {
-      console.warn('User profile not found for userId:', userId);
-      return {
-        currentElo: 1200,
-        matchesPlayed: 0,
-        matchesWon: 0,
-        winRate: 0,
-        recentMatches: [],
-        eloHistory: [],
-        tournamentsPlayed: 0,
-        lastEloChange: 0
-      };
-    }
-    
-    const matches = await getMatchesByPlayer(userId);
-    
-    const stats = {
-      currentElo: userProfile.elo || 1200,
-      matchesPlayed: userProfile.matchesPlayed || 0,
-      matchesWon: userProfile.matchesWon || 0,
-      winRate: userProfile.matchesPlayed > 0 
-        ? Math.round((userProfile.matchesWon / userProfile.matchesPlayed) * 100) 
-        : 0,
-      recentMatches: matches.slice(0, 5),
-      eloHistory: [],
-      tournamentsPlayed: userProfile.tournamentsPlayed || 0,
-      lastEloChange: userProfile.lastEloChange || 0
-    };
-    
-    return stats;
+ const tournamentMatches = await getMatchesByPlayer(userId);
+    const individualMatches = await getIndividualMatchesByPlayer(userId);
+
+    const allMatches = [...tournamentMatches, ...individualMatches];
+
+    const enhancedMatches = allMatches.map(match => {
+      // Tournament match
+      if (match.tournamentId) {
+        const isPlayer1 = match.player1Id === userId;
+        const won = match.winner === userId;
+        const opponentName = isPlayer1 ? match.player2Name : match.player1Name;
+        
+        let playerScore = 0;
+        let opponentScore = 0;
+        
+        match.scores?.forEach(score => {
+          if (isPlayer1) {
+            playerScore += score.player1 || 0;
+            opponentScore += score.player2 || 0;
+          } else {
+            playerScore += score.player2 || 0;
+            opponentScore += score.player1 || 0;
+          }
+        });
+
+        return {
+          ...match,
+          won,
+          opponentName,
+          playerScore,
+          opponentScore,
+          scoreDisplay: match.scores?.map(s => 
+            isPlayer1 ? `${s.player1}-${s.player2}` : `${s.player2}-${s.player1}`
+          ).join(', ') || '-',
+          contextDisplay: match.groupName || 'Tournament'
+        };
+      } 
+      // Individual match
+      else {
+        const isUserInTeam1 = match.team1.some(p => p.id === userId);
+        const won = (isUserInTeam1 && match.winner === 'team1') || (!isUserInTeam1 && match.winner === 'team2');
+        
+        const opponentTeam = isUserInTeam1 ? match.team2 : match.team1;
+        const opponentName = opponentTeam.map(p => p.name).join(' & ');
+
+        let playerScore = 0;
+        let opponentScore = 0;
+
+        match.scores?.forEach(score => {
+          if (isUserInTeam1) {
+            playerScore += score.team1 || 0;
+            opponentScore += score.team2 || 0;
+          } else {
+            playerScore += score.team2 || 0;
+            opponentScore += score.team1 || 0;
+          }
+        });
+
+        return {
+          ...match,
+          won,
+          opponentName,
+          playerScore,
+          opponentScore,
+          scoreDisplay: match.scores?.map(s => 
+            isUserInTeam1 ? `${s.team1}-${s.team2}` : `${s.team2}-${s.team1}`
+          ).join(', ') || '-',
+          contextDisplay: `${match.matchMode.charAt(0).toUpperCase() + match.matchMode.slice(1)} ${match.matchType}`
+        };
+      }
+    });
+
+    // Sort all matches by date
+    enhancedMatches.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
+
+    return enhancedMatches;
   } catch (error) {
     console.error('Error getting player statistics:', error);
     return null;
