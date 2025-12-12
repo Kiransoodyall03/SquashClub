@@ -207,7 +207,7 @@ ELO Change = K * (ActualScore - ExpectedScore)
 - 2 games to 15 points
 - 3 games to 11 points
 - Best of 3 to 11
-- Best of 5 to 9
+- Best of 5 to 11
 - Custom formats
 
 ### Group Generation Algorithm

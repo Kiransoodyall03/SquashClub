@@ -564,6 +564,7 @@ const TournamentDetails = ({ userProfile }) => {
                 const groupName = `Group ${String.fromCharCode(65 + groupIndex)}`;
                 const currentFormat = getGroupFormat(groupName);
                 const isCustom = tournament.groupSettings?.[groupName] != null;
+                const hasMatches = matches.some(m => m.groupName === groupName); // ← ADD THIS
 
                 return (
                   <div key={groupIndex} className="group-card card">
@@ -580,7 +581,7 @@ const TournamentDetails = ({ userProfile }) => {
                       </div>
                       
                       {/* SETTINGS ICON (Only for Owner) */}
-                      {isOwner && (
+                      {isOwner && !hasMatches && (
                         <div className="settings-wrapper">
                           <button 
                             className={`btn-icon ${activeSettingsGroup === groupName ? 'active' : ''}`}
@@ -623,7 +624,11 @@ const TournamentDetails = ({ userProfile }) => {
                         </div>
                       )}
                     </div>
-
+                    {hasMatches && (
+                      <div className="format-locked-badge">
+                        <span className="text-muted text-sm">✓ Format Locked</span>
+                      </div>
+                    )}
                     <div className="group-players">
                       {group.map((player, playerIndex) => (
                         <div 
@@ -785,10 +790,7 @@ const TournamentDetails = ({ userProfile }) => {
       {/* Score Entry Modal */}
       {selectedMatch && (
         <ScoreEntryModal
-          match={{
-            ...selectedMatch,
-            format: tournament.format
-          }}
+          match={selectedMatch} 
           onClose={() => setSelectedMatch(null)}
           onSubmit={handleScoreSubmit}
           isOwner={isOwner}

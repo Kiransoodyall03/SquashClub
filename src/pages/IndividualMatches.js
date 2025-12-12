@@ -318,9 +318,7 @@ const IndividualMatches = ({ userProfile }) => {
 
                     <div className="match-footer">
                       <div className="match-info">
-                        <span className="match-format">
-                          {match.format?.replace('-', ' ')} • {match.pointsPerGame} pts
-                        </span>
+                        <span className="match-format">{match.format}</span>
                         <span className="match-date">
                           <Calendar className="w-3 h-3" />
                           {formatDate(match.createdAt)}

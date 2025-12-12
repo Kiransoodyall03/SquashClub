@@ -21,7 +21,7 @@ import IndividualMatches from './pages/IndividualMatches';
 import MatchDetails from './pages/MatchDetails';
 
 // Components
-import Navigation from './components/Navigation';
+import Navigation from './components/navigation';
 import LoadingScreen from './components/LoadingScreen';
 import CompleteProfile from './components/CompleteProfile';
 

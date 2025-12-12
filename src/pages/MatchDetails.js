@@ -37,6 +37,55 @@ const MatchDetails = ({ userProfile }) => {
 
   const currentUserId = auth.currentUser?.uid;
 
+  // UPDATED: Logic to handle all specific formats
+  const getFormatConfig = (format) => {
+    // Default fallback
+    const config = { type: 'fixed', games: 1, pointsToWin: 21, gamesToWin: 1 };
+
+    if (!format) return config;
+
+    // Normalizing string for easier matching
+    const fmt = format.toLowerCase();
+
+    // === Best Of Formats ===
+    if (fmt.startsWith('best of')) {
+      config.type = 'bestOf';
+      
+      // Determine Max Games & Games Needed to Win
+      if (fmt.includes('best of 3')) {
+        config.games = 3;
+        config.gamesToWin = 2;
+      } else if (fmt.includes('best of 5')) {
+        config.games = 5;
+        config.gamesToWin = 3;
+      } else if (fmt.includes('best of 7')) {
+        config.games = 7;
+        config.gamesToWin = 4;
+      }
+
+      // Determine Points per Game
+      if (fmt.includes('to 15')) config.pointsToWin = 15;
+      else if (fmt.includes('to 11')) config.pointsToWin = 11;
+      else config.pointsToWin = 11; // Default for best of
+    } 
+    // === Fixed Game Formats ===
+    else {
+      config.type = 'fixed';
+      
+      if (fmt.includes('1 game')) {
+        config.games = 1;
+        config.pointsToWin = 21;
+      } else if (fmt.includes('2 games')) {
+        config.games = 2;
+        config.pointsToWin = 15;
+      } else if (fmt.includes('3 games')) {
+        config.games = 3;
+        config.pointsToWin = 11;
+      }
+    }
+    return config;
+  };
+
   useEffect(() => {
     loadMatch();
   }, [id]);
@@ -51,27 +100,19 @@ const MatchDetails = ({ userProfile }) => {
       }
       setMatch(matchData);
       
-      // Initialize scores array based on format
-      const numGames = getNumberOfGames(matchData.format);
-      if (matchData.scores && matchData.scores.length > 0) {
-        setScores(matchData.scores);
-      } else {
-        setScores(Array(numGames).fill({ team1: 0, team2: 0 }));
+      if (matchData) {
+        const config = getFormatConfig(matchData.format);
+        const numGames = config.type === 'bestOf' ? config.games : config.games;
+        if (matchData.scores && matchData.scores.length > 0) {
+          setScores(matchData.scores);
+        } else {
+          setScores(Array(numGames).fill({ team1: 0, team2: 0 }));
+        }
       }
     } catch (error) {
       console.error('Error loading match:', error);
     }
     setLoading(false);
-  };
-
-  const getNumberOfGames = (format) => {
-    const formatMap = {
-      'best-of-1': 1,
-      'best-of-3': 3,
-      'best-of-5': 5,
-      'best-of-7': 7
-    };
-    return formatMap[format] || 3;
   };
 
   const isUserInMatch = () => {
@@ -98,49 +139,64 @@ const MatchDetails = ({ userProfile }) => {
   };
 
   const calculateWinner = () => {
-    let team1Wins = 0;
-    let team2Wins = 0;
-    const gamesToWin = Math.ceil(getNumberOfGames(match.format) / 2);
-    
-    scores.forEach(game => {
-      if (game.team1 > game.team2) team1Wins++;
-      else if (game.team2 > game.team1) team2Wins++;
-    });
-    
-    if (team1Wins >= gamesToWin) return 'team1';
-    if (team2Wins >= gamesToWin) return 'team2';
+    const formatConfig = getFormatConfig(match.format);
+    const validScores = scores.filter(g => g.team1 > 0 || g.team2 > 0);
+
+    if (formatConfig.type === 'bestOf') {
+      let team1Wins = 0;
+      let team2Wins = 0;
+      validScores.forEach(game => {
+        if (game.team1 > game.team2) team1Wins++;
+        else if (game.team2 > game.team1) team2Wins++;
+      });
+      if (team1Wins >= formatConfig.gamesToWin) return 'team1';
+      if (team2Wins >= formatConfig.gamesToWin) return 'team2';
+    } else { // 'fixed'
+      if (validScores.length < formatConfig.games) return null;
+      let team1TotalPoints = 0;
+      let team2TotalPoints = 0;
+      validScores.forEach(game => {
+        team1TotalPoints += game.team1;
+        team2TotalPoints += game.team2;
+      });
+      if (team1TotalPoints > team2TotalPoints) return 'team1';
+      if (team2TotalPoints > team1TotalPoints) return 'team2';
+    }
+
     return null;
   };
 
   const validateScores = () => {
-    const minPoints = match.pointsPerGame;
-    const gamesToWin = Math.ceil(getNumberOfGames(match.format) / 2);
-    
-    let team1Wins = 0;
-    let team2Wins = 0;
-    
-    for (let i = 0; i < scores.length; i++) {
-      const game = scores[i];
-      
-      // Check if game has been played
-      if (game.team1 === 0 && game.team2 === 0) continue;
-      
-      // For a completed game, winner must have at least minPoints
-      if (game.team1 >= minPoints || game.team2 >= minPoints) {
+    const formatConfig = getFormatConfig(match.format);
+    const playedScores = scores.filter(g => g.team1 > 0 || g.team2 > 0);
+
+    if (formatConfig.type === 'bestOf') {
+      let team1Wins = 0;
+      let team2Wins = 0;
+      playedScores.forEach(game => {
         if (game.team1 > game.team2) team1Wins++;
         else if (game.team2 > game.team1) team2Wins++;
+      });
+      if (team1Wins < formatConfig.gamesToWin && team2Wins < formatConfig.gamesToWin) {
+        setError(`Match must have a winner (first to ${formatConfig.gamesToWin} games)`);
+        return false;
       }
-      
-      // Stop checking once we have a match winner
-      if (team1Wins >= gamesToWin || team2Wins >= gamesToWin) break;
+    } else { // 'fixed'
+      if (playedScores.length < formatConfig.games) {
+        setError(`All ${formatConfig.games} games must be entered.`);
+        return false;
+      }
+      let team1TotalPoints = 0;
+      let team2TotalPoints = 0;
+      playedScores.forEach(game => {
+        team1TotalPoints += game.team1;
+        team2TotalPoints += game.team2;
+      });
+      if (team1TotalPoints === team2TotalPoints) {
+        setError('Total score cannot be a draw for this format.');
+        return false;
+      }
     }
-    
-    // Must have a winner
-    if (team1Wins < gamesToWin && team2Wins < gamesToWin) {
-      setError(`Match must have a winner (first to ${gamesToWin} games)`);
-      return false;
-    }
-    
     return true;
   };
 
@@ -240,6 +296,7 @@ const MatchDetails = ({ userProfile }) => {
 
   const winner = match.winner;
   const userTeam = isUserInTeam1() ? 'team1' : 'team2';
+  const formatConfig = getFormatConfig(match.format);
   const userWon = winner === userTeam;
 
   return (
@@ -283,7 +340,7 @@ const MatchDetails = ({ userProfile }) => {
             <div className="match-info-row">
               <div className="info-item">
                 <Target className="w-5 h-5" />
-                <span>{match.format?.replace('-', ' ')} • {match.pointsPerGame} points</span>
+                <span>{match.format}</span>
               </div>
               <div className="info-item">
                 <Calendar className="w-5 h-5" />
@@ -397,9 +454,13 @@ const MatchDetails = ({ userProfile }) => {
               
               {/* Final Score Summary */}
               <div className="final-score">
-                <span>Final Score: </span>
+                <span>
+                  {formatConfig.type === 'bestOf' ? 'Final Score (Games):' : 'Final Score (Total Points):'}
+                </span>
                 <strong>
-                  {match.scores.filter(g => g.team1 > g.team2).length} - {match.scores.filter(g => g.team2 > g.team1).length}
+                  {formatConfig.type === 'bestOf'
+                    ? `${match.scores.filter(g => g.team1 > g.team2).length} - ${match.scores.filter(g => g.team2 > g.team1).length}`
+                    : `${match.scores.reduce((acc, s) => acc + s.team1, 0)} - ${match.scores.reduce((acc, s) => acc + s.team2, 0)}`}
                 </strong>
               </div>
             </motion.div>
@@ -454,7 +515,10 @@ const MatchDetails = ({ userProfile }) => {
               </div>
 
               <p className="score-hint">
-                Enter scores for each game. First team to win {Math.ceil(getNumberOfGames(match.format) / 2)} games wins.
+                {formatConfig.type === 'bestOf' 
+                  ? `Enter scores for each game. First team to win ${formatConfig.gamesToWin} games wins.`
+                  : `Enter scores for all ${formatConfig.games} games. Team with highest total score wins.`
+                }
                 {match.matchMode === 'ranked' && ' This will affect ELO ratings.'}
               </p>
 

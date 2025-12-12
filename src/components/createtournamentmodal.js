@@ -1,8 +1,9 @@
-//CreateTournamentModal.js
+// src/components/CreateTournamentModal.js
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Users, Trophy, Settings } from 'lucide-react';
+import { X, Calendar, Clock, Users, Trophy, Settings, FlaskConical } from 'lucide-react'; // Added FlaskConical icon
+import { getAllUsers, joinTournament } from '../firebase/firestore'; // Import necessary firebase functions
 
 const CreateTournamentModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -14,7 +15,11 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
     maxParticipants: 16,
     description: ''
   });
+  
+  // DEV TOOL STATE
+  const [addAllUsers, setAddAllUsers] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState(''); // Added to show progress
   const [error, setError] = useState('');
 
   const formatOptions = [
@@ -25,8 +30,7 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
     'Best of 3 to 15',
     'Best of 5 to 11',
     'Best of 5 to 15',
-    'Best of 7 to 11',
-    'Custom'
+    'Best of 7 to 11'
   ];
 
   const handleChange = (e) => {
@@ -40,15 +44,40 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingText('Creating Tournament...');
     setError('');
 
-    const result = await onSubmit(formData);
-    
-    if (!result.success) {
-      setError(result.error || 'Failed to create tournament');
+    try {
+      // 1. Create the tournament first
+      const result = await onSubmit(formData);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create tournament');
+      }
+
+      // 2. DEV TOOL LOGIC: Add all users if selected
+      if (addAllUsers && result.tournamentId) {
+        setLoadingText('Dev Tool: Fetching all users...');
+        const allUsers = await getAllUsers();
+        
+        setLoadingText(`Dev Tool: Adding ${allUsers.length} users...`);
+        
+        // Use Promise.all to add them in parallel
+        const addPromises = allUsers.map(user => 
+          joinTournament(result.tournamentId, user.id, user)
+        );
+        
+        await Promise.all(addPromises);
+        console.log('Dev Tool: All users added successfully');
+      }
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setLoadingText('');
     }
-    
-    setLoading(false);
   };
 
   return (
@@ -169,7 +198,7 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
                 value={formData.maxParticipants}
                 onChange={handleChange}
                 min="4"
-                max="32"
+                max="64"
                 required
               />
             </div>
@@ -187,6 +216,22 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
             />
           </div>
 
+          {/* DEV TOOL SECTION */}
+          <div className="dev-tool-section">
+            <div className="dev-tool-header">
+              <FlaskConical className="w-4 h-4" />
+              <span>Dev Tools</span>
+            </div>
+            <label className="dev-checkbox-label">
+              <input 
+                type="checkbox" 
+                checked={addAllUsers}
+                onChange={(e) => setAddAllUsers(e.target.checked)}
+              />
+              <span>Auto-populate with all DB users</span>
+            </label>
+          </div>
+
           <div className="modal-actions">
             <button 
               type="button" 
@@ -201,7 +246,7 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create Tournament'}
+              {loading ? (loadingText || 'Creating...') : 'Create Tournament'}
             </button>
           </div>
         </form>
@@ -273,6 +318,33 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: var(--spacing-md);
+        }
+
+        .dev-tool-section {
+          margin-top: var(--spacing-lg);
+          padding: var(--spacing-md);
+          border: 1px dashed #fbbf24;
+          border-radius: var(--radius-md);
+          background: rgba(251, 191, 36, 0.05);
+        }
+
+        .dev-tool-header {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          color: #d97706;
+          font-weight: 600;
+          font-size: 0.875rem;
+          margin-bottom: var(--spacing-sm);
+        }
+
+        .dev-checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          cursor: pointer;
+          font-size: 0.875rem;
+          color: var(--dark-gray);
         }
 
         .modal-actions {

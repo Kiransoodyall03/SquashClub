@@ -1006,19 +1006,6 @@ export const getLeaderboard = async (limit = 10) => {
   }
 };
 
-// ============================================
-// TOURNAMENT GROUP GENERATION - IMPROVED
-// ============================================
-// Distributes participants evenly across groups using snake draft
-// Extra participants are added to groups (making them larger) rather than
-// creating small leftover groups.
-// 
-// Examples with groupSize = 3:
-// - 10 participants → 3 groups: 4 + 3 + 3
-// - 11 participants → 3 groups: 4 + 4 + 3
-// - 12 participants → 4 groups: 3 + 3 + 3 + 3
-// - 8 participants → 2 groups: 4 + 4
-// ============================================
 export const generateTournamentGroups = (participants, groupSize = 4) => {
   if (!participants || participants.length === 0) return [];
   
@@ -1027,21 +1014,16 @@ export const generateTournamentGroups = (participants, groupSize = 4) => {
   
   const numParticipants = sortedParticipants.length;
   
-  // If we have fewer participants than groupSize, put them all in one group
+  // If everyone fits in one group, return them all
   if (numParticipants <= groupSize) {
     return [sortedParticipants];
   }
   
-  // Calculate number of groups
-  // We want minimum groups where each group has at least groupSize members
-  // Extra participants get distributed to existing groups
+  // Calculate number of groups needed
   let numGroups = Math.floor(numParticipants / groupSize);
-  
-  // Ensure we have at least 1 group
   if (numGroups === 0) numGroups = 1;
   
-  // Check if this creates groups that are too large (more than groupSize + 1)
-  // If so, add more groups to keep group sizes reasonable
+  // Adjust if groups would be too large
   while (numGroups < numParticipants) {
     const maxGroupSize = Math.ceil(numParticipants / numGroups);
     if (maxGroupSize <= groupSize + 1) break;
@@ -1049,30 +1031,34 @@ export const generateTournamentGroups = (participants, groupSize = 4) => {
   }
   
   console.log(`Generating ${numGroups} groups for ${numParticipants} participants (target size: ${groupSize})`);
+
+  // Calculate base size and how many groups need an extra player
+  const baseSize = Math.floor(numParticipants / numGroups);
+  const groupsWithExtra = numParticipants % numGroups;
   
-  // Create empty groups
+  // Create groups array
   const groups = Array.from({ length: numGroups }, () => []);
   
-  // Use snake draft for balanced ELO distribution
-  // This ensures each group has similar average ELO
-  // Round 0: 0 → 1 → 2 → 3 (left to right)
-  // Round 1: 3 → 2 → 1 → 0 (right to left)
-  // Round 2: 0 → 1 → 2 → 3 (left to right)
-  // etc.
-  sortedParticipants.forEach((participant, index) => {
-    const round = Math.floor(index / numGroups);
-    const posInRound = index % numGroups;
-    const groupIndex = round % 2 === 0 ? posInRound : (numGroups - 1 - posInRound);
-    groups[groupIndex].push(participant);
-  });
+  // Fill groups in descending order
+  let participantIndex = 0;
   
-  // Sort each group by ELO (highest first) for display
-  groups.forEach(group => {
-    group.sort((a, b) => (b.elo || 1200) - (a.elo || 1200));
-  });
+  for (let groupIndex = 0; groupIndex < numGroups; groupIndex++) {
+    // Determine size of this group (some groups get +1 player)
+    const thisGroupSize = groupIndex < groupsWithExtra ? baseSize + 1 : baseSize;
+    
+    // Add players to this group
+    for (let i = 0; i < thisGroupSize && participantIndex < numParticipants; i++) {
+      groups[groupIndex].push(sortedParticipants[participantIndex]);
+      participantIndex++;
+    }
+  }
   
-  // Log group sizes for debugging
   console.log('Group sizes:', groups.map(g => g.length).join(', '));
+  console.log('Group ELO ranges:', groups.map((g, i) => {
+    const highest = g[0]?.elo || 0;
+    const lowest = g[g.length - 1]?.elo || 0;
+    return `Group ${String.fromCharCode(65 + i)}: ${highest}-${lowest}`;
+  }).join(', '));
   
   return groups;
 };

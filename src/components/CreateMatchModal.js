@@ -21,8 +21,7 @@ import { auth } from '../firebase/config';
 const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
   const [matchType, setMatchType] = useState('1v1'); // 1v1 or 2v2
   const [matchMode, setMatchMode] = useState('ranked'); // ranked or casual
-  const [format, setFormat] = useState('best-of-3'); // best-of-1, best-of-3, best-of-5, best-of-7
-  const [pointsPerGame, setPointsPerGame] = useState(15);
+  const [format, setFormat] = useState('Best of 3 to 11');
   const [opponent, setOpponent] = useState(null);
   const [partner, setPartner] = useState(null); // For 2v2
   const [opponent2, setOpponent2] = useState(null); // For 2v2
@@ -35,6 +34,17 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
 
   const currentUserId = auth.currentUser?.uid;
 
+  const formatOptions = [
+    '1 game to 21',
+    '2 games to 15',
+    '3 games to 11',
+    'Best of 3 to 11',
+    'Best of 3 to 15',
+    'Best of 5 to 11',
+    'Best of 5 to 15',
+    'Best of 7 to 11'
+  ];
+
   useEffect(() => {
     if (isOpen) {
       loadUsers();
@@ -42,21 +52,19 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
     }
   }, [isOpen]);
 
-  // Update points per game when match mode changes
   useEffect(() => {
     if (matchMode === 'ranked') {
-      setPointsPerGame(15);
-      if (!['best-of-3', 'best-of-5', 'best-of-7'].includes(format)) {
-        setFormat('best-of-3');
+      const isRankedFormat = format.startsWith('Best of');
+      if (!isRankedFormat) {
+        setFormat('Best of 3 to 11'); // Default ranked format
       }
     }
-  }, [matchMode]);
+  }, [matchMode, format]);
 
   const resetForm = () => {
     setMatchType('1v1');
     setMatchMode('ranked');
-    setFormat('best-of-3');
-    setPointsPerGame(15);
+    setFormat('Best of 3 to 11');
     setOpponent(null);
     setPartner(null);
     setOpponent2(null);
@@ -142,12 +150,8 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
     }
     
     if (matchMode === 'ranked') {
-      if (pointsPerGame < 15) {
-        setError('Ranked matches require minimum 15 points per game');
-        return false;
-      }
-      if (!['best-of-3', 'best-of-5', 'best-of-7'].includes(format)) {
-        setError('Ranked matches require minimum best-of-3');
+      if (!format.startsWith('Best of')) {
+        setError('Ranked matches must be a "Best of" format.');
         return false;
       }
     }
@@ -162,11 +166,13 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
     setError('');
     
     try {
+      const points = parseInt(format.split(' to ')[1]) || 0;
+
       const matchData = {
         matchType,
         matchMode,
         format,
-        pointsPerGame,
+        pointsPerGame: points,
         // Team 1
         team1: matchType === '1v1' 
           ? [{ id: currentUserId, name: `${userProfile.firstName} ${userProfile.lastName}`, elo: userProfile.elo }]
@@ -201,42 +207,11 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
 
   const getFormatOptions = () => {
     if (matchMode === 'ranked') {
-      return [
-        { value: 'best-of-3', label: 'Best of 3' },
-        { value: 'best-of-5', label: 'Best of 5' },
-        { value: 'best-of-7', label: 'Best of 7' }
-      ];
+      return formatOptions
+        .filter(f => f.startsWith('Best of'))
+        .map(f => ({ value: f, label: f }));
     }
-    return [
-      { value: 'best-of-1', label: 'Best of 1' },
-      { value: 'best-of-3', label: 'Best of 3' },
-      { value: 'best-of-5', label: 'Best of 5' },
-      { value: 'best-of-7', label: 'Best of 7' }
-    ];
-  };
-
-  const getPointsOptions = () => {
-    if (matchMode === 'ranked') {
-      return [
-        { value: 15, label: '15 points' },
-        { value: 21, label: '21 points' }
-      ];
-    }
-    return [
-      { value: 11, label: '11 points' },
-      { value: 15, label: '15 points' },
-      { value: 21, label: '21 points' }
-    ];
-  };
-
-  const getNumberOfGames = () => {
-    const formatMap = {
-      'best-of-1': 1,
-      'best-of-3': 3,
-      'best-of-5': 5,
-      'best-of-7': 7
-    };
-    return formatMap[format] || 3;
+    return formatOptions.map(f => ({ value: f, label: f }));
   };
 
   if (!isOpen) return null;
@@ -342,47 +317,26 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
               </div>
 
               {/* Match Format */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Format</label>
-                  <select
-                    value={format}
-                    onChange={(e) => setFormat(e.target.value)}
-                    className="form-select"
-                  >
-                    {getFormatOptions().map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <p className="form-hint">
-                    {matchMode === 'ranked' && 'Ranked: minimum best-of-3'}
-                  </p>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Points per Game</label>
-                  <select
-                    value={pointsPerGame}
-                    onChange={(e) => setPointsPerGame(Number(e.target.value))}
-                    className="form-select"
-                  >
-                    {getPointsOptions().map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <p className="form-hint">
-                    {matchMode === 'ranked' && 'Ranked: minimum 15 points'}
-                  </p>
-                </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">Format</label>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                  className="form-select"
+                >
+                  {getFormatOptions().map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <p className="form-hint">
+                  {matchMode === 'ranked' && 'Ranked matches must be a "Best of" format.'}
+                </p>
               </div>
 
               {/* Match Summary */}
               <div className="match-summary">
                 <Target className="w-5 h-5" />
-                <span>
-                  {matchType} {matchMode} match • {format.replace('-', ' ')} • 
-                  {' '}{getNumberOfGames()} game{getNumberOfGames() > 1 ? 's' : ''} to {pointsPerGame}
-                </span>
+                <span>{matchType} {matchMode} match • {format}</span>
               </div>
 
               <div className="modal-footer">
@@ -1176,12 +1130,22 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
   );
 
   function calculateEstimatedElo(win) {
-    const playerElo = userProfile?.elo || 1200;
-    const opponentElo = opponent?.elo || 1200;
-    
+    const currentUserElo = userProfile?.elo || 1200;
+    let ownTeamElo;
+    let opponentTeamElo;
+
+    if (matchType === '1v1') {
+      ownTeamElo = currentUserElo;
+      opponentTeamElo = opponent?.elo || 1200;
+    } else {
+      if (!partner || !opponent || !opponent2) return 0;
+      ownTeamElo = (currentUserElo + (partner.elo || 1200)) / 2;
+      opponentTeamElo = ((opponent.elo || 1200) + (opponent2.elo || 1200)) / 2;
+    }
+
     // Use same calculation as Chess.com
     const K = (userProfile?.matchesPlayed || 0) < 30 ? 40 : 32;
-    const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+    const expectedScore = 1 / (1 + Math.pow(10, (opponentTeamElo - ownTeamElo) / 400));
     const actualScore = win ? 1 : 0;
     const change = Math.round(K * (actualScore - expectedScore));
     
