@@ -1,165 +1,165 @@
-        .auth-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: var(--spacing-xl);
-          background: linear-gradient(135deg, var(--light-gray) 0%, rgba(255, 107, 53, 0.1) 100%);
-        }
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--light-gray) 0%, rgba(255, 107, 53, 0.1) 100%);
+}
 
-        .auth-container {
-          width: 100%;
-          max-width: 450px;
-        }
+.auth-container {
+  width: 100%;
+  max-width: 450px;
+}
 
-        .auth-card {
-          padding: var(--spacing-2xl);
-        }
+.auth-card {
+  padding: var(--spacing-2xl);
+}
 
-        .auth-header {
-          text-align: center;
-          margin-bottom: var(--spacing-2xl);
-        }
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
 
-        .auth-header h2 {
-          margin-bottom: var(--spacing-sm);
-        }
+.auth-header h2 {
+  margin-bottom: var(--spacing-sm);
+}
 
-        .error-message {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-md);
-          background: rgba(244, 67, 54, 0.1);
-          border: 1px solid var(--danger);
-          border-radius: var(--radius-md);
-          color: var(--danger);
-          margin-bottom: var(--spacing-lg);
-        }
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  color: var(--danger);
+  margin-bottom: var(--spacing-lg);
+}
 
-        .auth-form {
-          margin-bottom: var(--spacing-lg);
-        }
+.auth-form {
+  margin-bottom: var(--spacing-lg);
+}
 
-        .input-wrapper {
-          position: relative;
-        }
+.input-wrapper {
+  position: relative;
+}
 
-        .input-icon {
-          position: absolute;
-          left: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 20px;
-          height: 20px;
-          color: var(--gray);
-        }
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: var(--gray);
+}
 
-        .form-input.with-icon {
-          padding-left: 3rem;
-        }
+.form-input.with-icon {
+  padding-left: 3rem;
+}
 
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          margin-bottom: var(--spacing-lg);
-        }
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-lg);
+}
 
-        .forgot-link {
-          color: var(--primary);
-          text-decoration: none;
-          font-size: 0.875rem;
-          font-weight: 500;
-        }
+.forgot-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
 
-        .forgot-link:hover {
-          text-decoration: underline;
-        }
+.forgot-link:hover {
+  text-decoration: underline;
+}
 
-        .btn-full {
-          width: 100%;
-        }
+.btn-full {
+  width: 100%;
+}
 
-        .auth-divider {
-          text-align: center;
-          margin: var(--spacing-xl) 0;
-          position: relative;
-        }
+.auth-divider {
+  text-align: center;
+  margin: var(--spacing-xl) 0;
+  position: relative;
+}
 
-        .auth-divider::before,
-        .auth-divider::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          width: calc(50% - 30px);
-          height: 1px;
-          background: var(--light-gray);
-        }
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 30px);
+  height: 1px;
+  background: var(--light-gray);
+}
 
-        .auth-divider::before {
-          left: 0;
-        }
+.auth-divider::before {
+  left: 0;
+}
 
-        .auth-divider::after {
-          right: 0;
-        }
+.auth-divider::after {
+  right: 0;
+}
 
-        .auth-divider span {
-          background: var(--white);
-          padding: 0 var(--spacing-md);
-          color: var(--gray);
-          font-size: 0.875rem;
-        }
+.auth-divider span {
+  background: var(--white);
+  padding: 0 var(--spacing-md);
+  color: var(--gray);
+  font-size: 0.875rem;
+}
 
-        .btn-google {
-          background: var(--white);
-          color: var(--dark-gray);
-          border: 2px solid var(--light-gray);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--spacing-md);
-        }
+.btn-google {
+  background: var(--white);
+  color: var(--dark-gray);
+  border: 2px solid var(--light-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
 
-        .btn-google:hover {
-          background: var(--light-gray);
-          transform: translateY(-2px);
-        }
+.btn-google:hover {
+  background: var(--light-gray);
+  transform: translateY(-2px);
+}
 
-        .google-icon {
-          width: 20px;
-          height: 20px;
-        }
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
 
-        .auth-footer {
-          text-align: center;
-          margin-top: var(--spacing-xl);
-        }
+.auth-footer {
+  text-align: center;
+  margin-top: var(--spacing-xl);
+}
 
-        .auth-footer p {
-          color: var(--dark-gray);
-        }
+.auth-footer p {
+  color: var(--dark-gray);
+}
 
-        .auth-footer a {
-          color: var(--primary);
-          text-decoration: none;
-          font-weight: 600;
-        }
+.auth-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
 
-        .auth-footer a:hover {
-          text-decoration: underline;
-        }
+.auth-footer a:hover {
+  text-decoration: underline;
+}
 
-        .loading-spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 3px solid rgba(255, 255, 255, 0.3);
-          border-top-color: var(--white);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

@@ -17,7 +17,7 @@ import {
   getLeaderboard 
 } from '../../firebase/firestore';
 import { auth } from '../../firebase/config';
-
+import './PlayerDashboard.css';
 const PlayerDashboard = () => {
   const [stats, setStats] = useState(null);
   const [upcomingTournaments, setUpcomingTournaments] = useState([]);

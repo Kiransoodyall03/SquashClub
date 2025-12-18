@@ -1,230 +1,229 @@
-    
-        .owner-dashboard {
-          background: var(--off-white);
-        }
+.owner-dashboard {
+  background: var(--off-white);
+}
 
-        .dashboard-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: var(--spacing-2xl);
-        }
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-2xl);
+}
 
-        .header-content h1 {
-          margin-bottom: var(--spacing-sm);
-        }
+.header-content h1 {
+  margin-bottom: var(--spacing-sm);
+}
 
-        .tournaments-section {
-          margin-top: var(--spacing-2xl);
-        }
+.tournaments-section {
+  margin-top: var(--spacing-2xl);
+}
 
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: var(--spacing-xl);
-        }
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
 
-        .filter-tabs {
-          display: flex;
-          gap: var(--spacing-sm);
-        }
+.filter-tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+}
 
-        .filter-tab {
-          padding: var(--spacing-sm) var(--spacing-md);
-          background: transparent;
-          border: 1px solid var(--light-gray);
-          border-radius: var(--radius-full);
-          color: var(--dark-gray);
-          cursor: pointer;
-          transition: all var(--transition-base);
-        }
+.filter-tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius-full);
+  color: var(--dark-gray);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
 
-        .filter-tab:hover {
-          border-color: var(--primary);
-          color: var(--primary);
-        }
+.filter-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
 
-        .filter-tab.active {
-          background: var(--primary);
-          border-color: var(--primary);
-          color: var(--green);
-        }
+.filter-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
 
-        .tournaments-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: var(--spacing-lg);
-        }
+.tournaments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--spacing-lg);
+}
 
-        .tournament-management-card {
-          display: flex;
-          flex-direction: column;
-        }
+.tournament-management-card {
+  display: flex;
+  flex-direction: column;
+}
 
-        .tournament-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding-bottom: var(--spacing-md);
-          border-bottom: 1px solid var(--light-gray);
-          margin-bottom: var(--spacing-md);
-        }
+.tournament-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--light-gray);
+  margin-bottom: var(--spacing-md);
+}
 
-        .tournament-actions {
-          display: flex;
-          gap: var(--spacing-sm);
-        }
+.tournament-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
 
-        .action-btn {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: transparent;
-          border: 1px solid var(--light-gray);
-          border-radius: var(--radius-sm);
-          color: var(--dark-gray);
-          cursor: pointer;
-          transition: all var(--transition-base);
-        }
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--light-gray);
+  border-radius: var(--radius-sm);
+  color: var(--dark-gray);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
 
-        .action-btn:hover {
-          border-color: var(--primary);
-          color: var(--primary);
-        }
+.action-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
 
-        .tournament-body {
-          flex: 1;
-        }
+.tournament-body {
+  flex: 1;
+}
 
-        .tournament-body h3 {
-          margin-bottom: var(--spacing-md);
-        }
+.tournament-body h3 {
+  margin-bottom: var(--spacing-md);
+}
 
-        .tournament-meta {
-          display: flex;
-          gap: var(--spacing-lg);
-          margin-bottom: var(--spacing-md);
-        }
+.tournament-meta {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
 
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-xs);
-          font-size: 0.875rem;
-          color: var(--gray);
-        }
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.875rem;
+  color: var(--gray);
+}
 
-        .tournament-format {
-          display: flex;
-          gap: var(--spacing-sm);
-          font-size: 0.875rem;
-        }
+.tournament-format {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+}
 
-        .format-label {
-          color: var(--gray);
-        }
+.format-label {
+  color: var(--gray);
+}
 
-        .format-value {
-          font-weight: 600;
-          color: var(--secondary);
-        }
+.format-value {
+  font-weight: 600;
+  color: var(--secondary);
+}
 
-        .tournament-footer {
-          display: flex;
-          gap: var(--spacing-sm);
-          margin-top: var(--spacing-lg);
-          padding-top: var(--spacing-md);
-          border-top: 1px solid var(--light-gray);
-        }
+.tournament-footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--light-gray);
+}
 
-        .badge-upcoming {
-          background: var(--warning);
-        }
+.badge-upcoming {
+  background: var(--warning);
+}
 
-        .badge-in-progress {
-          background: var(--primary);
-        }
+.badge-in-progress {
+  background: var(--primary);
+}
 
-        .badge-completed {
-          background: var(--success);
-        }
+.badge-completed {
+  background: var(--success);
+}
 
-        .quick-actions-section {
-          margin-top: var(--spacing-3xl);
-        }
+.quick-actions-section {
+  margin-top: var(--spacing-3xl);
+}
 
-        .quick-actions-section h2 {
-          margin-bottom: var(--spacing-lg);
-        }
+.quick-actions-section h2 {
+  margin-bottom: var(--spacing-lg);
+}
 
-        .quick-actions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: var(--spacing-lg);
-        }
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-lg);
+}
 
-        .quick-action-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: var(--spacing-md);
-          padding: var(--spacing-xl);
-          background: var(--white);
-          border: 2px solid var(--light-gray);
-          border-radius: var(--radius-lg);
-          color: var(--secondary);
-          text-decoration: none;
-          cursor: pointer;
-          transition: all var(--transition-base);
-        }
+.quick-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  background: var(--white);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-lg);
+  color: var(--secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
 
-        .quick-action-card:hover {
-          border-color: var(--primary);
-          transform: translateY(-4px);
-          box-shadow: var(--shadow-lg);
-        }
+.quick-action-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
 
-        .quick-action-card span {
-          font-weight: 600;
-        }
+.quick-action-card span {
+  font-weight: 600;
+}
 
-        .empty-state {
-          text-align: center;
-          padding: var(--spacing-3xl);
-          color: var(--gray);
-        }
+.empty-state {
+  text-align: center;
+  padding: var(--spacing-3xl);
+  color: var(--gray);
+}
 
-        .empty-state h3 {
-          margin: var(--spacing-lg) 0 var(--spacing-sm);
-        }
+.empty-state h3 {
+  margin: var(--spacing-lg) 0 var(--spacing-sm);
+}
 
-        .empty-state p {
-          margin-bottom: var(--spacing-xl);
-        }
+.empty-state p {
+  margin-bottom: var(--spacing-xl);
+}
 
-        @media (max-width: 768px) {
-          .dashboard-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--spacing-lg);
-          }
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-lg);
+  }
 
-          .section-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--spacing-md);
-          }
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
 
-          .filter-tabs {
-            width: 100%;
-            overflow-x: auto;
-          }
+  .filter-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
 
-          .tournaments-grid {
-            grid-template-columns: 1fr;
-          }
-        }
+  .tournaments-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -10,7 +10,7 @@ import {
   Search
 } from 'lucide-react';
 import { getTournaments } from '../../firebase/firestore';
-
+import './Tournaments.css';
 const Tournaments = ({ userProfile }) => {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
