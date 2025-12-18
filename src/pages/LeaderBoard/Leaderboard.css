@@ -1,0 +1,257 @@
+/* User Rank Card */
+.user-rank-card {
+  margin-bottom: var(--spacing-xl);
+  background: var(--gradient-primary);
+  color: var(--white);
+}
+
+.user-rank-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.user-rank-info h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.25rem;
+  opacity: 0.9;
+}
+
+.user-rank-stats {
+  display: flex;
+  gap: var(--spacing-xl);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.elo-badge {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Leaderboard Table */
+.leaderboard-container {
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaderboard-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px 300px;
+  align-items: center;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid var(--light-gray);
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.leaderboard-row:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-row:hover {
+  background: var(--light-gray);
+}
+
+.leaderboard-row.current-user {
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 4px solid var(--primary);
+}
+
+.leaderboard-row.top-three {
+  background: linear-gradient(to right, rgba(255, 215, 0, 0.05), transparent);
+}
+
+/* Rank Cell */
+.rank-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+/* Player Cell */
+.player-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.player-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--secondary);
+}
+
+.player-tier {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ELO Cell */
+.elo-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.elo-value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.elo-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.elo-label {
+  font-size: 0.75rem;
+  color: var(--gray);
+  text-transform: uppercase;
+}
+
+/* Stats Cell */
+.stats-cell {
+  display: flex;
+  gap: var(--spacing-lg);
+  justify-content: flex-end;
+}
+
+.stat-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-number {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.stat-number.win {
+  color: var(--success);
+}
+
+/* You Badge */
+.you-badge {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ELO Color Classes */
+.elo-master {
+  color: #a855f7;
+}
+
+.elo-expert {
+  color: #ef4444;
+}
+
+.elo-advanced {
+  color: #f59e0b;
+}
+
+.elo-intermediate {
+  color: #3b82f6;
+}
+
+.elo-beginner {
+  color: #6b7280;
+}
+
+/* Loading and Empty States */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xxl);
+  gap: var(--spacing-md);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--gray);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .leaderboard-row {
+    grid-template-columns: 60px 1fr 100px 200px;
+    padding: var(--spacing-md) var(--spacing-lg);
+  }
+
+  .stats-cell {
+    gap: var(--spacing-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .leaderboard-row {
+    grid-template-columns: 50px 1fr 80px;
+    padding: var(--spacing-md);
+  }
+
+  .stats-cell {
+    display: none;
+  }
+
+  .user-rank-stats {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .user-rank-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
