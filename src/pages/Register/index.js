@@ -30,7 +30,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    age: '',
+    birthdate: '',
     role: 'player',
     registrationPassword: ''
   });
@@ -43,7 +43,7 @@ const Register = () => {
   const [googleFormData, setGoogleFormData] = useState({
     firstName: '',
     lastName: '',
-    age: '',
+    birthdate: '',
     role: 'player',
     registrationPassword: ''
   });
@@ -64,6 +64,28 @@ const Register = () => {
     setError('');
   };
 
+  const validateAge = (birthdate) => {
+    if (!birthdate) return { valid: false, message: 'Birthdate is required' };
+    
+    const today = new Date();
+    const birthDate = new Date(birthdate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    if (age < 13) {
+      return { valid: false, message: 'You must be at least 13 years old to register' };
+    }
+    if (age > 100) {
+      return { valid: false, message: 'Invalid birthdate' };
+    }
+    
+    return { valid: true };
+  };
+
   const validateForm = () => {
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -73,11 +95,13 @@ const Register = () => {
       setError('Password must be at least 6 characters');
       return false;
     }
-    const age = parseInt(formData.age);
-    if (age < 16 || age > 100) {
-      setError('Age must be between 16 and 100');
+    
+    const ageValidation = validateAge(formData.birthdate);
+    if (!ageValidation.valid) {
+      setError(ageValidation.message);
       return false;
     }
+    
     // Validate registration password
     if (!validateRegistrationPassword(formData.role, formData.registrationPassword)) {
       setError(`Invalid registration password for ${formData.role === 'owner' ? 'Club Owner' : 'Player'} account`);
@@ -97,7 +121,7 @@ const Register = () => {
     const profileData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
-      age: parseInt(formData.age),
+      birthdate: new Date(formData.birthdate),
       role: formData.role
     };
 
@@ -116,65 +140,42 @@ const Register = () => {
     setLoading(false);
   };
 
-const handleGoogleSignup = async () => {
-  setLoading(true);
-  setError('');
-  
-  console.log('=== handleGoogleSignup START ===');
-  
-  const result = await loginWithGoogle();
-  
-  console.log('=== loginWithGoogle result ===');
-  console.log('Success:', result.success);
-  console.log('isNewUser:', result.isNewUser);
-  console.log('Has user:', !!result.user);
-  console.log('Has profile:', !!result.profile);
-  console.log('Full result:', result);
-  
-  if (result.success) {
-    console.log('Login successful');
+  const handleGoogleSignup = async () => {
+    setLoading(true);
+    setError('');
     
-    if (result.isNewUser) {
-      console.log('🆕 NEW USER DETECTED - showing completion form');
-      // New user - show completion form
-      setGoogleUser(result.user);
-      
-      // Pre-fill form with Google data
-      const displayName = result.user.displayName || '';
-      const nameParts = displayName.split(' ');
-      
-      console.log('Display name:', displayName);
-      console.log('Name parts:', nameParts);
-      
-      setGoogleFormData({
-        ...googleFormData,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || ''
-      });
-      
-      setShowGoogleCompletion(true);
-      console.log('✅ Completion form state set to TRUE');
-    } else {
-      console.log('👤 EXISTING USER - redirecting');
-      console.log('Profile role:', result.profile?.role);
-      
-      // Existing user - redirect based on role
-      if (result.profile?.role === 'owner') {
-        console.log('→ Redirecting to owner dashboard');
-        navigate('/owner-dashboard');
+    const result = await loginWithGoogle();
+    
+    if (result.success) {
+      if (result.isNewUser) {
+        // New user - show completion form
+        setGoogleUser(result.user);
+        
+        // Pre-fill form with Google data
+        const displayName = result.user.displayName || '';
+        const nameParts = displayName.split(' ');
+        
+        setGoogleFormData({
+          ...googleFormData,
+          firstName: nameParts[0] || '',
+          lastName: nameParts.slice(1).join(' ') || ''
+        });
+        
+        setShowGoogleCompletion(true);
       } else {
-        console.log('→ Redirecting to player dashboard');
-        navigate('/dashboard');
+        // Existing user - redirect based on role
+        if (result.profile?.role === 'owner') {
+          navigate('/owner-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       }
+    } else {
+      setError(result.error);
     }
-  } else {
-    console.error('❌ Login failed:', result.error);
-    setError(result.error);
-  }
-  
-  setLoading(false);
-  console.log('=== handleGoogleSignup END ===');
-};
+    
+    setLoading(false);
+  };
 
   const handleGoogleCompletion = async (e) => {
     e.preventDefault();
@@ -185,11 +186,11 @@ const handleGoogleSignup = async () => {
       return;
     }
     
-    // Validate age if provided
-    if (googleFormData.age) {
-      const age = parseInt(googleFormData.age);
-      if (age < 16 || age > 100) {
-        setError('Age must be between 16 and 100');
+    // Validate birthdate if provided
+    if (googleFormData.birthdate) {
+      const ageValidation = validateAge(googleFormData.birthdate);
+      if (!ageValidation.valid) {
+        setError(ageValidation.message);
         return;
       }
     }
@@ -200,7 +201,7 @@ const handleGoogleSignup = async () => {
     const result = await completeGoogleRegistration(googleUser.uid, {
       firstName: googleFormData.firstName,
       lastName: googleFormData.lastName,
-      age: googleFormData.age ? parseInt(googleFormData.age) : null,
+      birthdate: googleFormData.birthdate ? new Date(googleFormData.birthdate) : null,
       role: googleFormData.role
     });
     
@@ -301,18 +302,16 @@ const handleGoogleSignup = async () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Age (Optional)</label>
+                  <label className="form-label">Birthdate (Optional)</label>
                   <div className="input-wrapper">
                     <Calendar className="input-icon" />
                     <input
-                      type="number"
-                      name="age"
+                      type="date"
+                      name="birthdate"
                       className="form-input with-icon"
-                      placeholder="25"
-                      min="16"
-                      max="100"
-                      value={googleFormData.age}
+                      value={googleFormData.birthdate}
                       onChange={handleGoogleFormChange}
+                      max={new Date().toISOString().split('T')[0]}
                     />
                   </div>
                 </div>
@@ -677,18 +676,16 @@ const handleGoogleSignup = async () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Age</label>
+                <label className="form-label">Birthdate</label>
                 <div className="input-wrapper">
                   <Calendar className="input-icon" />
                   <input
-                    type="number"
-                    name="age"
+                    type="date"
+                    name="birthdate"
                     className="form-input with-icon"
-                    placeholder="25"
-                    min="16"
-                    max="100"
-                    value={formData.age}
+                    value={formData.birthdate}
                     onChange={handleChange}
+                    max={new Date().toISOString().split('T')[0]}
                     required
                   />
                 </div>

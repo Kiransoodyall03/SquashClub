@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getTournaments } from '../../firebase/firestore';
 import './Tournaments.css';
+
 const Tournaments = ({ userProfile }) => {
   const navigate = useNavigate();
   const [tournaments, setTournaments] = useState([]);
@@ -129,7 +130,7 @@ const Tournaments = ({ userProfile }) => {
               {filteredTournaments.map((tournament) => (
                 <motion.div
                   key={tournament.id}
-                  className="tournament-card card"
+                  className="tournament-card"
                   whileHover={{ y: -4 }}
                   onClick={() => navigate(`/tournament/${tournament.id}`)}
                 >
@@ -158,10 +159,6 @@ const Tournaments = ({ userProfile }) => {
                       </span>
                     </div>
                   </div>
-
-                  {tournament.description && (
-                    <p className="tournament-description">{tournament.description}</p>
-                  )}
 
                   <div className="tournament-footer">
                     {isUserParticipating(tournament) ? (

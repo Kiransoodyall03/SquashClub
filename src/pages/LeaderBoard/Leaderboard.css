@@ -1,32 +1,83 @@
+/* Filters Section */
+.filters-section {
+  margin-bottom: var(--spacing-lg, 1.5rem);
+  padding: var(--spacing-lg, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md, 1rem);
+}
+
+.filter-tabs {
+  display: flex;
+  gap: var(--spacing-sm, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: var(--spacing-sm, 0.5rem) var(--spacing-md, 1rem);
+  background: transparent;
+  border: 1px solid var(--light-gray, #E0E0E0);
+  border-radius: var(--radius-md, 0.5rem);
+  cursor: pointer;
+  transition: all var(--transition-base, 0.3s ease);
+  color: var(--dark-gray, #333);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.filter-tab:hover {
+  background: var(--light-gray, #F5F5F5);
+  border-color: var(--primary, #FF6B35);
+}
+
+.filter-tab.active {
+  background: var(--gradient-primary, linear-gradient(135deg, #FF6B35 0%, #F7931E 100%));
+  color: var(--white, #FFFFFF);
+  border-color: transparent;
+}
+
+/* Category Title */
+.category-title {
+  margin-bottom: var(--spacing-lg, 1.5rem);
+}
+
+.category-title h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--secondary, #004E89);
+  text-align: center;
+}
+
 /* User Rank Card */
 .user-rank-card {
-  margin-bottom: var(--spacing-xl);
-  background: var(--gradient-primary);
-  color: var(--white);
+  margin-bottom: var(--spacing-xl, 2rem);
+  background: var(--gradient-primary, linear-gradient(135deg, #FF6B35 0%, #F7931E 100%));
+  color: var(--white, #FFFFFF);
 }
 
 .user-rank-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-lg, 1.5rem);
 }
 
 .user-rank-info h3 {
-  margin: 0 0 var(--spacing-md) 0;
+  margin: 0 0 var(--spacing-md, 1rem) 0;
   font-size: 1.25rem;
   opacity: 0.9;
 }
 
 .user-rank-stats {
   display: flex;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-xl, 2rem);
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-sm, 0.5rem);
 }
 
 .stat-value {
@@ -35,8 +86,8 @@
 }
 
 .elo-badge {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-lg);
+  padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
+  border-radius: var(--radius-lg, 1rem);
   font-size: 1.25rem;
   font-weight: 700;
   background: rgba(255, 255, 255, 0.2);
@@ -57,9 +108,9 @@
   display: grid;
   grid-template-columns: 80px 1fr 120px 300px;
   align-items: center;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-bottom: 1px solid var(--light-gray);
-  transition: all var(--transition-base);
+  padding: var(--spacing-lg, 1.5rem) var(--spacing-xl, 2rem);
+  border-bottom: 1px solid var(--light-gray, #E8E8E8);
+  transition: all var(--transition-base, 0.3s ease);
   position: relative;
 }
 
@@ -68,12 +119,12 @@
 }
 
 .leaderboard-row:hover {
-  background: var(--light-gray);
+  background: var(--light-gray, #F5F5F5);
 }
 
 .leaderboard-row.current-user {
   background: rgba(59, 130, 246, 0.1);
-  border-left: 4px solid var(--primary);
+  border-left: 4px solid var(--primary, #FF6B35);
 }
 
 .leaderboard-row.top-three {
@@ -90,26 +141,26 @@
 .rank-number {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--gray);
+  color: var(--gray, #666);
 }
 
 /* Player Cell */
 .player-cell {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-md, 1rem);
 }
 
 .player-info {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-xs, 0.25rem);
 }
 
 .player-name {
   font-weight: 600;
   font-size: 1rem;
-  color: var(--secondary);
+  color: var(--secondary, #004E89);
 }
 
 .player-tier {
@@ -134,19 +185,19 @@
 .elo-number {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary, #FF6B35);
 }
 
 .elo-label {
   font-size: 0.75rem;
-  color: var(--gray);
+  color: var(--gray, #666);
   text-transform: uppercase;
 }
 
 /* Stats Cell */
 .stats-cell {
   display: flex;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-lg, 1.5rem);
   justify-content: flex-end;
 }
 
@@ -159,29 +210,29 @@
 
 .stat-label {
   font-size: 0.75rem;
-  color: var(--gray);
-  margin-bottom: var(--spacing-xs);
+  color: var(--gray, #666);
+  margin-bottom: var(--spacing-xs, 0.25rem);
 }
 
 .stat-number {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--secondary);
+  color: var(--secondary, #004E89);
 }
 
 .stat-number.win {
-  color: var(--success);
+  color: var(--success, #4CAF50);
 }
 
 /* You Badge */
 .you-badge {
   position: absolute;
-  top: var(--spacing-sm);
-  right: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--primary);
-  color: var(--white);
-  border-radius: var(--radius-sm);
+  top: var(--spacing-sm, 0.5rem);
+  right: var(--spacing-sm, 0.5rem);
+  padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+  background: var(--primary, #FF6B35);
+  color: var(--white, #FFFFFF);
+  border-radius: var(--radius-sm, 0.25rem);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -214,31 +265,43 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xxl);
-  gap: var(--spacing-md);
+  padding: var(--spacing-xxl, 3rem);
+  gap: var(--spacing-md, 1rem);
 }
 
 .empty-state {
   text-align: center;
-  color: var(--gray);
+  color: var(--gray, #666);
+}
+
+.empty-state h3 {
+  margin: 0;
+  color: var(--secondary, #004E89);
+  font-size: 1.5rem;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--gray, #666);
+  font-size: 1rem;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .leaderboard-row {
     grid-template-columns: 60px 1fr 100px 200px;
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-md, 1rem) var(--spacing-lg, 1.5rem);
   }
 
   .stats-cell {
-    gap: var(--spacing-md);
+    gap: var(--spacing-md, 1rem);
   }
 }
 
 @media (max-width: 768px) {
   .leaderboard-row {
     grid-template-columns: 50px 1fr 80px;
-    padding: var(--spacing-md);
+    padding: var(--spacing-md, 1rem);
   }
 
   .stats-cell {
@@ -247,11 +310,19 @@
 
   .user-rank-stats {
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-sm, 0.5rem);
   }
 
   .user-rank-content {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .category-title h2 {
+    font-size: 1.5rem;
+  }
+  
+  .filter-tabs {
+    justify-content: center;
   }
 }

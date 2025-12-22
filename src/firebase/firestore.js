@@ -968,7 +968,6 @@ export const updatePlayerElo = async (userId, eloChange, won) => {
   }
 };
 
-// Leaderboard Operations
 export const getLeaderboard = async (limit = 10) => {
   try {
     const q = query(
@@ -991,6 +990,7 @@ export const getLeaderboard = async (limit = 10) => {
           elo: userData.elo,
           matchesPlayed: userData.matchesPlayed,
           matchesWon: userData.matchesWon,
+          birthdate: userData.birthdate, // Add this line
           winRate: userData.matchesPlayed > 0 
             ? Math.round((userData.matchesWon / userData.matchesPlayed) * 100) 
             : 0
@@ -1005,7 +1005,6 @@ export const getLeaderboard = async (limit = 10) => {
     return [];
   }
 };
-
 export const generateTournamentGroups = (participants, groupSize = 4) => {
   if (!participants || participants.length === 0) return [];
   

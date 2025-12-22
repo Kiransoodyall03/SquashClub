@@ -11,18 +11,76 @@ import './Leaderboard.css';
 
 const Leaderboard = ({ userProfile }) => {
   const [leaderboard, setLeaderboard] = useState([]);
+  const [filteredLeaderboard, setFilteredLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState('all'); // all, month, week
+  const [ageFilter, setAgeFilter] = useState('all');
+
+  const ageGroups = [
+    { key: 'all', label: 'All Players', title: 'All Players' },
+    { key: 'juniors', label: 'Juniors', title: 'Juniors (Under 13)' },
+    { key: 'teenagers', label: 'Teenagers', title: 'Teenagers (Under 18)' },
+    { key: 'adults', label: 'Adults', title: 'Adults (18-45)' },
+    { key: 'masters', label: 'Masters', title: 'Masters (45+)' }
+  ];
 
   useEffect(() => {
     loadLeaderboard();
   }, []);
 
+  useEffect(() => {
+    filterLeaderboard();
+  }, [ageFilter, leaderboard]);
+
   const loadLeaderboard = async () => {
     setLoading(true);
-    const data = await getLeaderboard(50); // Get top 50
+    const data = await getLeaderboard(50);
     setLeaderboard(data);
     setLoading(false);
+  };
+
+  const getAgeFromBirthdate = (birthdate) => {
+    if (!birthdate) return null;
+    const today = new Date();
+    const birthDate = new Date(birthdate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const filterLeaderboard = () => {
+    if (ageFilter === 'all') {
+      setFilteredLeaderboard(leaderboard);
+      return;
+    }
+
+    const filtered = leaderboard.filter(player => {
+      const age = getAgeFromBirthdate(player.birthdate);
+      if (age === null) return false;
+
+      switch (ageFilter) {
+        case 'juniors':
+          return age < 13;
+        case 'teenagers':
+          return age >= 13 && age < 18;
+        case 'adults':
+          return age >= 18 && age <= 45;
+        case 'masters':
+          return age > 45;
+        default:
+          return true;
+      }
+    });
+
+    // Reassign ranks for filtered results
+    const rankedFiltered = filtered.map((player, index) => ({
+      ...player,
+      rank: index + 1
+    }));
+
+    setFilteredLeaderboard(rankedFiltered);
   };
 
   const getRankIcon = (rank) => {
@@ -48,7 +106,8 @@ const Leaderboard = ({ userProfile }) => {
     return 'Beginner';
   };
 
-  const userRank = leaderboard.findIndex(player => player.id === userProfile?.id) + 1;
+  const userRank = filteredLeaderboard.findIndex(player => player.id === userProfile?.id) + 1;
+  const currentAgeGroup = ageGroups.find(group => group.key === ageFilter);
 
   return (
     <div className="page-container">
@@ -62,6 +121,26 @@ const Leaderboard = ({ userProfile }) => {
               <h1>Leaderboard</h1>
               <p className="page-subtitle">Top players ranked by ELO rating</p>
             </div>
+          </div>
+
+          {/* Age Group Filters */}
+          <div className="filters-section card">
+            <div className="filter-tabs">
+              {ageGroups.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setAgeFilter(key)}
+                  className={`filter-tab ${ageFilter === key ? 'active' : ''}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category Title */}
+          <div className="category-title">
+            <h2>{currentAgeGroup?.title}</h2>
           </div>
 
           {/* User's Position Card */}
@@ -98,16 +177,16 @@ const Leaderboard = ({ userProfile }) => {
               <div className="spinner"></div>
               <p>Loading leaderboard...</p>
             </div>
-          ) : leaderboard.length === 0 ? (
+          ) : filteredLeaderboard.length === 0 ? (
             <div className="empty-state card">
               <Trophy className="w-16 h-16 opacity-20" />
-              <h3>No players yet</h3>
-              <p>Be the first to compete!</p>
+              <h3>No players in this category</h3>
+              <p>Check back later or try a different age group</p>
             </div>
           ) : (
             <div className="leaderboard-container card">
               <div className="leaderboard-table">
-                {leaderboard.map((player, index) => (
+                {filteredLeaderboard.map((player, index) => (
                   <motion.div
                     key={player.id}
                     className={`leaderboard-row ${player.id === userProfile?.id ? 'current-user' : ''} ${index < 3 ? 'top-three' : ''}`}
