@@ -6,22 +6,22 @@ import { getUserProfile } from './firebase/firestore';
 import { AnimatePresence } from 'framer-motion';
 
 // Pages
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import PlayerDashboard from './pages/PlayerDashboard';
-import OwnerDashboard from './pages/OwnerDashboard';
-import TournamentDetails from './pages/TournamentDetails';
+import Landing from './pages/landing';
+import Login from './pages/login';
+import Register from './pages/register';
+import PlayerDashboard from './pages/playerdashboard';
+import OwnerDashboard from './pages/ownerdashboard';
+import TournamentDetails from './pages/tournamentdetails';
 import Tournaments from './pages/Tournaments';
 import Leaderboard from './pages/Leaderboard';
-import Profile from './pages/Profile';
-import JoinTournament from './pages/JoinTournament';
+import Profile from './pages/profile';
+import JoinTournament from './pages/jointournament';
 import MemberManagement from './pages/MemberManagement';
 import IndividualMatches from './pages/IndividualMatches';
 import MatchDetails from './pages/MatchDetails';
 
 // Components
-import Navigation from './components/navigation';
+import Navigation from './components/Navigation';
 import LoadingScreen from './components/LoadingScreen';
 import CompleteProfile from './components/CompleteProfile';
 
