@@ -10,7 +10,6 @@ import {
   Search
 } from 'lucide-react';
 import { getTournaments } from '../../firebase/firestore';
-import './Tournaments.css';
 
 const Tournaments = ({ userProfile }) => {
   const navigate = useNavigate();
@@ -130,7 +129,7 @@ const Tournaments = ({ userProfile }) => {
               {filteredTournaments.map((tournament) => (
                 <motion.div
                   key={tournament.id}
-                  className="tournament-card"
+                  className="tournament-card card"
                   whileHover={{ y: -4 }}
                   onClick={() => navigate(`/tournament/${tournament.id}`)}
                 >
@@ -160,6 +159,10 @@ const Tournaments = ({ userProfile }) => {
                     </div>
                   </div>
 
+                  {tournament.description && (
+                    <p className="tournament-description">{tournament.description}</p>
+                  )}
+
                   <div className="tournament-footer">
                     {isUserParticipating(tournament) ? (
                       <span className="participating-badge">
@@ -181,6 +184,212 @@ const Tournaments = ({ userProfile }) => {
           )}
         </motion.div>
       </div>
+
+      <style>{`
+        .filters-section {
+          margin-bottom: var(--spacing-xl);
+          padding: var(--spacing-lg);
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-md);
+        }
+
+        .search-bar {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: var(--light-gray);
+          border-radius: var(--radius-md);
+        }
+
+        .search-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          font-size: 1rem;
+        }
+
+        .filter-tabs {
+          display: flex;
+          gap: var(--spacing-sm);
+          flex-wrap: wrap;
+        }
+
+        .filter-tab {
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: transparent;
+          border: 1px solid var(--light-gray);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: all var(--transition-base);
+          color: var(--dark-gray);
+          font-weight: 500;
+        }
+
+        .filter-tab:hover {
+          background: var(--light-gray);
+        }
+
+        .filter-tab.active {
+          background: var(--gradient-primary);
+          color: var(--white);
+          border-color: transparent;
+        }
+
+        .tournaments-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          gap: var(--spacing-lg);
+        }
+
+        .tournament-card {
+          cursor: pointer;
+          transition: all var(--transition-base);
+          position: relative;
+        }
+
+        .tournament-card:hover {
+          box-shadow: var(--shadow-lg);
+        }
+
+        .tournament-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: var(--spacing-md);
+          gap: var(--spacing-md);
+        }
+
+        .tournament-header h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          flex: 1;
+        }
+
+        .badge {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border-radius: var(--radius-sm);
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .badge-upcoming {
+          background: rgba(33, 150, 243, 0.1);
+          color: #2196F3;
+        }
+
+        .badge-active {
+          background: rgba(76, 175, 80, 0.1);
+          color: var(--success);
+        }
+
+        .badge-completed {
+          background: rgba(158, 158, 158, 0.1);
+          color: var(--gray);
+        }
+
+        .tournament-details {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-sm);
+          margin-bottom: var(--spacing-md);
+        }
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          color: var(--gray);
+          font-size: 0.9rem;
+        }
+
+        .tournament-description {
+          color: var(--gray);
+          font-size: 0.9rem;
+          margin: var(--spacing-md) 0;
+          line-height: 1.5;
+        }
+
+        .tournament-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: var(--spacing-md);
+          padding-top: var(--spacing-md);
+          border-top: 1px solid var(--light-gray);
+        }
+
+        .tournament-format {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          color: var(--primary);
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+
+        .participating-badge {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          color: var(--success);
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+
+        .chevron-icon {
+          color: var(--gray);
+          transition: transform var(--transition-base);
+        }
+
+        .tournament-card:hover .chevron-icon {
+          transform: translateX(4px);
+        }
+
+        .loading-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--spacing-xxl);
+          gap: var(--spacing-md);
+          color: var(--gray);
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: var(--spacing-xxl);
+          gap: var(--spacing-md);
+          text-align: center;
+        }
+
+        .empty-state h3 {
+          margin: 0;
+          color: var(--secondary);
+        }
+
+        .empty-state p {
+          margin: 0;
+          color: var(--gray);
+        }
+
+        @media (max-width: 768px) {
+          .tournaments-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .tournament-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+        }
+      `}</style>
     </div>
   );
 };
