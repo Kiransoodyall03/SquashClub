@@ -34,7 +34,11 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
   const [formData, setFormData] = useState({
     firstName: initialUserProfile?.firstName || '',
     lastName: initialUserProfile?.lastName || '',
+<<<<<<< HEAD:src/pages/Profile/index.js
     birthdate: initialUserProfile?.birthdate || ''
+=======
+    birthDate: initialUserProfile?.birthDate || ''
+>>>>>>> BetterTournament:src/pages/profile.js
   });
   const [loading, setLoading] = useState(false);
   const [tournaments, setTournaments] = useState([]);
@@ -106,7 +110,11 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
       setFormData({
         firstName: freshProfile.firstName || '',
         lastName: freshProfile.lastName || '',
+<<<<<<< HEAD:src/pages/Profile/index.js
         birthdate: formatBirthdateForInput(freshProfile.birthdate)
+=======
+        birthDate: freshProfile.birthDate || ''
+>>>>>>> BetterTournament:src/pages/profile.js
       });
     }
     
@@ -175,7 +183,11 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
     setFormData({
       firstName: userProfile?.firstName || '',
       lastName: userProfile?.lastName || '',
+<<<<<<< HEAD:src/pages/Profile/index.js
       birthdate: formatBirthdateForInput(userProfile?.birthdate)
+=======
+      birthDate: userProfile?.birthDate || ''
+>>>>>>> BetterTournament:src/pages/profile.js
     });
     setEditMode(false);
   };
@@ -186,6 +198,18 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
 
   const lossCount = (userProfile?.matchesPlayed || 0) - (userProfile?.matchesWon || 0);
   const userAge = calculateAge(userProfile?.birthdate);
+
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString) return '-';
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   return (
     <div className="profile-page">
@@ -308,6 +332,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                 </div>
                 
                 <div className="form-group">
+<<<<<<< HEAD:src/pages/Profile/index.js
                   <label className="form-label">Birthdate</label>
                   <input
                     type="date"
@@ -316,6 +341,15 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                     value={formData.birthdate}
                     onChange={handleChange}
                     max={new Date().toISOString().split('T')[0]}
+=======
+                  <label className="form-label">Birth Date</label>
+                  <input
+                    type="date"
+                    name="birthDate"
+                    className="form-input"
+                    value={formData.birthDate}
+                    onChange={handleChange}
+>>>>>>> BetterTournament:src/pages/profile.js
                   />
                 </div>
                 
@@ -362,9 +396,13 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                   <Calendar className="w-5 h-5" />
                   <div>
                     <span className="info-label">Age</span>
+<<<<<<< HEAD:src/pages/Profile/index.js
                     <span className="info-value">
                       {userAge !== null ? `${userAge} years` : '-'}
                     </span>
+=======
+                    <span className="info-value">{calculateAge(userProfile?.birthDate)} years</span>
+>>>>>>> BetterTournament:src/pages/profile.js
                   </div>
                 </div>
 

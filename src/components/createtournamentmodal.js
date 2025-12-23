@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Clock, Users, Trophy, Settings, FlaskConical } from 'lucide-react'; // Added FlaskConical icon
+import { X, Calendar, Clock, Users, Trophy, Settings, FlaskConical, Lock, Shield } from 'lucide-react'; // Added FlaskConical icon
 import { getAllUsers, joinTournament } from '../firebase/firestore'; // Import necessary firebase functions
 
 const CreateTournamentModal = ({ onClose, onSubmit }) => {
@@ -13,7 +13,9 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
     format: '1 game to 21',
     groupSize: 4,
     maxParticipants: 16,
-    description: ''
+    description: '',
+    requiresApproval: false,
+    password: ''
   });
   
   // DEV TOOL STATE
@@ -34,9 +36,10 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
   ];
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
     setError('');
   };
@@ -166,6 +169,40 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
                 <option key={format} value={format}>{format}</option>
               ))}
             </select>
+          </div>
+
+          <div className="form-section-divider">
+            <span>Access Control</span>
+          </div>
+
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="requiresApproval"
+                checked={formData.requiresApproval}
+                onChange={handleChange}
+              />
+              <span className="checkbox-text">
+                <Shield className="w-4 h-4" />
+                Require Organizer Approval
+              </span>
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Lock className="w-4 h-4" />
+              Tournament Password (Optional)
+            </label>
+            <input
+              type="text"
+              name="password"
+              className="form-input"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Leave empty for no password"
+            />
           </div>
 
           <div className="form-row">
@@ -312,6 +349,34 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           display: flex;
           align-items: center;
           gap: var(--spacing-xs);
+        }
+
+        .form-section-divider {
+          margin: var(--spacing-lg) 0 var(--spacing-md);
+          border-bottom: 1px solid var(--light-gray);
+          padding-bottom: var(--spacing-xs);
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: var(--gray);
+          text-transform: uppercase;
+        }
+
+        .checkbox-group {
+          margin-bottom: var(--spacing-md);
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+          cursor: pointer;
+        }
+
+        .checkbox-text {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          font-weight: 500;
         }
 
         .form-row {

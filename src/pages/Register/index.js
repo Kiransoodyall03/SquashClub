@@ -30,7 +30,11 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
+<<<<<<< HEAD:src/pages/Register/index.js
     birthdate: '',
+=======
+    birthDate: '',
+>>>>>>> BetterTournament:src/pages/register.js
     role: 'player',
     registrationPassword: ''
   });
@@ -43,7 +47,11 @@ const Register = () => {
   const [googleFormData, setGoogleFormData] = useState({
     firstName: '',
     lastName: '',
+<<<<<<< HEAD:src/pages/Register/index.js
     birthdate: '',
+=======
+    birthDate: '',
+>>>>>>> BetterTournament:src/pages/register.js
     role: 'player',
     registrationPassword: ''
   });
@@ -96,9 +104,21 @@ const Register = () => {
       return false;
     }
     
+<<<<<<< HEAD:src/pages/Register/index.js
     const ageValidation = validateAge(formData.birthdate);
     if (!ageValidation.valid) {
       setError(ageValidation.message);
+=======
+    if (!formData.birthDate) {
+      setError('Birth date is required');
+      return false;
+    }
+
+    const age = calculateAge(formData.birthDate);
+
+    if (age < 16 || age > 100) {
+      setError('You must be between 16 and 100 years old');
+>>>>>>> BetterTournament:src/pages/register.js
       return false;
     }
     
@@ -108,6 +128,17 @@ const Register = () => {
       return false;
     }
     return true;
+  };
+
+  const calculateAge = (birthDateString) => {
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   const handleSubmit = async (e) => {
@@ -121,7 +152,11 @@ const Register = () => {
     const profileData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
+<<<<<<< HEAD:src/pages/Register/index.js
       birthdate: new Date(formData.birthdate),
+=======
+      birthDate: formData.birthDate,
+>>>>>>> BetterTournament:src/pages/register.js
       role: formData.role
     };
 
@@ -186,11 +221,19 @@ const Register = () => {
       return;
     }
     
+<<<<<<< HEAD:src/pages/Register/index.js
     // Validate birthdate if provided
     if (googleFormData.birthdate) {
       const ageValidation = validateAge(googleFormData.birthdate);
       if (!ageValidation.valid) {
         setError(ageValidation.message);
+=======
+    // Validate birth date if provided
+    if (googleFormData.birthDate) {
+      const age = calculateAge(googleFormData.birthDate);
+      if (age < 16 || age > 100) {
+        setError('You must be between 16 and 100 years old');
+>>>>>>> BetterTournament:src/pages/register.js
         return;
       }
     }
@@ -201,7 +244,11 @@ const Register = () => {
     const result = await completeGoogleRegistration(googleUser.uid, {
       firstName: googleFormData.firstName,
       lastName: googleFormData.lastName,
+<<<<<<< HEAD:src/pages/Register/index.js
       birthdate: googleFormData.birthdate ? new Date(googleFormData.birthdate) : null,
+=======
+      birthDate: googleFormData.birthDate || null,
+>>>>>>> BetterTournament:src/pages/register.js
       role: googleFormData.role
     });
     
@@ -302,14 +349,24 @@ const Register = () => {
 
               <div className="form-row">
                 <div className="form-group">
+<<<<<<< HEAD:src/pages/Register/index.js
                   <label className="form-label">Birthdate (Optional)</label>
+=======
+                  <label className="form-label">Birth Date (Optional)</label>
+>>>>>>> BetterTournament:src/pages/register.js
                   <div className="input-wrapper">
                     <Calendar className="input-icon" />
                     <input
                       type="date"
+<<<<<<< HEAD:src/pages/Register/index.js
                       name="birthdate"
                       className="form-input with-icon"
                       value={googleFormData.birthdate}
+=======
+                      name="birthDate"
+                      className="form-input with-icon"
+                      value={googleFormData.birthDate}
+>>>>>>> BetterTournament:src/pages/register.js
                       onChange={handleGoogleFormChange}
                       max={new Date().toISOString().split('T')[0]}
                     />
@@ -676,14 +733,24 @@ const Register = () => {
 
             <div className="form-row">
               <div className="form-group">
+<<<<<<< HEAD:src/pages/Register/index.js
                 <label className="form-label">Birthdate</label>
+=======
+                <label className="form-label">Birth Date</label>
+>>>>>>> BetterTournament:src/pages/register.js
                 <div className="input-wrapper">
                   <Calendar className="input-icon" />
                   <input
                     type="date"
+<<<<<<< HEAD:src/pages/Register/index.js
                     name="birthdate"
                     className="form-input with-icon"
                     value={formData.birthdate}
+=======
+                    name="birthDate"
+                    className="form-input with-icon"
+                    value={formData.birthDate}
+>>>>>>> BetterTournament:src/pages/register.js
                     onChange={handleChange}
                     max={new Date().toISOString().split('T')[0]}
                     required
