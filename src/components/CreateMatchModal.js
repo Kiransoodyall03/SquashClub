@@ -363,13 +363,6 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
                 {/* Current User (You) */}
                 <div className="player-slot filled">
                   <div className="player-info">
-                    {userProfile?.photoURL ? (
-                      <img src={userProfile.photoURL} alt="" className="player-avatar" />
-                    ) : (
-                      <div className="player-avatar-placeholder">
-                        {userProfile?.firstName?.[0]}{userProfile?.lastName?.[0]}
-                      </div>
-                    )}
                     <div className="player-details">
                       <span className="player-name">
                         {userProfile?.firstName} {userProfile?.lastName}
@@ -382,37 +375,71 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
 
                 {/* Partner (for 2v2) */}
                 {matchType === '2v2' && (
-                  partner ? (
-                    <div className="player-slot filled">
-                      <div className="player-info">
-                        {partner.photoURL ? (
-                          <img src={partner.photoURL} alt="" className="player-avatar" />
-                        ) : (
-                          <div className="player-avatar-placeholder">
-                            {partner.firstName?.[0]}{partner.lastName?.[0]}
+                  <div className="player-dropdown-wrapper">
+                    <label className="player-dropdown-label">Partner</label>
+                    {partner ? (
+                      <div className="player-slot filled">
+                        <div className="player-info">
+                          <div className="player-details">
+                            <span className="player-name">{partner.firstName} {partner.lastName}</span>
+                            <span className="player-elo">ELO: {partner.elo || 1200}</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="remove-player-btn"
+                          onClick={() => removePlayer('partner')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="player-select-dropdown">
+                        <button 
+                          className="dropdown-trigger"
+                          onClick={() => setSelectingFor(selectingFor === 'partner' ? null : 'partner')}
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          <span>Select partner</span>
+                          <ChevronDown className={`w-4 h-4 chevron ${selectingFor === 'partner' ? 'open' : ''}`} />
+                        </button>
+                        
+                        {selectingFor === 'partner' && (
+                          <div className="dropdown-menu">
+                            <div className="dropdown-search">
+                              <Search className="w-4 h-4" />
+                              <input
+                                type="text"
+                                placeholder="Search players..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                autoFocus
+                              />
+                            </div>
+                            <div className="dropdown-list">
+                              {filteredUsers.length === 0 ? (
+                                <div className="no-results">No players found</div>
+                              ) : (
+                                filteredUsers.map(user => (
+                                  <div 
+                                    key={user.id}
+                                    className="dropdown-item"
+                                    onClick={() => handleSelectPlayer(user)}
+                                  >
+                                    <div className="dropdown-details">
+                                      <span className="dropdown-name">
+                                        {user.firstName} {user.lastName}
+                                      </span>
+                                      <span className="dropdown-elo">ELO: {user.elo || 1200}</span>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
                           </div>
                         )}
-                        <div className="player-details">
-                          <span className="player-name">{partner.firstName} {partner.lastName}</span>
-                          <span className="player-elo">ELO: {partner.elo || 1200}</span>
-                        </div>
                       </div>
-                      <button 
-                        className="remove-player-btn"
-                        onClick={() => removePlayer('partner')}
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div 
-                      className={`player-slot empty ${selectingFor === 'partner' ? 'selecting' : ''}`}
-                      onClick={() => setSelectingFor('partner')}
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      <span>Select your partner</span>
-                    </div>
-                  )
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -420,8 +447,8 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
               <div className="vs-divider">
                 <span>VS</span>
               </div>
-
-              {/* Opponent Team */}
+                
+               {/* Opponent Team */}
               <div className="team-section">
                 <h3 className="team-title">
                   <span className="team-badge team-2">Team 2</span>
@@ -429,119 +456,141 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
                 </h3>
                 
                 {/* Opponent 1 */}
-                {opponent ? (
-                  <div className="player-slot filled">
-                    <div className="player-info">
-                      {opponent.photoURL ? (
-                        <img src={opponent.photoURL} alt="" className="player-avatar" />
-                      ) : (
-                        <div className="player-avatar-placeholder opponent">
-                          {opponent.firstName?.[0]}{opponent.lastName?.[0]}
-                        </div>
-                      )}
-                      <div className="player-details">
-                        <span className="player-name">{opponent.firstName} {opponent.lastName}</span>
-                        <span className="player-elo">ELO: {opponent.elo || 1200}</span>
-                      </div>
-                    </div>
-                    <button 
-                      className="remove-player-btn"
-                      onClick={() => removePlayer('opponent')}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div 
-                    className={`player-slot empty ${selectingFor === 'opponent' ? 'selecting' : ''}`}
-                    onClick={() => setSelectingFor('opponent')}
-                  >
-                    <UserPlus className="w-5 h-5" />
-                    <span>Select opponent</span>
-                  </div>
-                )}
-
-                {/* Opponent 2 (for 2v2) */}
-                {matchType === '2v2' && (
-                  opponent2 ? (
+                <div className="player-dropdown-wrapper">
+                  <label className="player-dropdown-label">Opponent {matchType === '2v2' ? '1' : ''}</label>
+                  {opponent ? (
                     <div className="player-slot filled">
                       <div className="player-info">
-                        {opponent2.photoURL ? (
-                          <img src={opponent2.photoURL} alt="" className="player-avatar" />
-                        ) : (
-                          <div className="player-avatar-placeholder opponent">
-                            {opponent2.firstName?.[0]}{opponent2.lastName?.[0]}
-                          </div>
-                        )}
                         <div className="player-details">
-                          <span className="player-name">{opponent2.firstName} {opponent2.lastName}</span>
-                          <span className="player-elo">ELO: {opponent2.elo || 1200}</span>
+                          <span className="player-name">{opponent.firstName} {opponent.lastName}</span>
+                          <span className="player-elo">ELO: {opponent.elo || 1200}</span>
                         </div>
                       </div>
                       <button 
                         className="remove-player-btn"
-                        onClick={() => removePlayer('opponent2')}
+                        onClick={() => removePlayer('opponent')}
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div 
-                      className={`player-slot empty ${selectingFor === 'opponent2' ? 'selecting' : ''}`}
-                      onClick={() => setSelectingFor('opponent2')}
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      <span>Select second opponent</span>
-                    </div>
-                  )
-                )}
-              </div>
-
-              {/* Player Selection Dropdown */}
-              {selectingFor && (
-                <div className="player-selector">
-                  <div className="selector-header">
-                    <Search className="w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Search players..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      autoFocus
-                    />
-                    <button onClick={() => setSelectingFor(null)}>
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="selector-list">
-                    {filteredUsers.length === 0 ? (
-                      <div className="no-results">No players found</div>
-                    ) : (
-                      filteredUsers.map(user => (
-                        <div 
-                          key={user.id}
-                          className="selector-item"
-                          onClick={() => handleSelectPlayer(user)}
-                        >
-                          {user.photoURL ? (
-                            <img src={user.photoURL} alt="" className="selector-avatar" />
-                          ) : (
-                            <div className="selector-avatar-placeholder">
-                              {user.firstName?.[0]}{user.lastName?.[0]}
-                            </div>
-                          )}
-                          <div className="selector-details">
-                            <span className="selector-name">
-                              {user.firstName} {user.lastName}
-                            </span>
-                            <span className="selector-elo">ELO: {user.elo || 1200}</span>
+                    <div className="player-select-dropdown">
+                      <button 
+                        className="dropdown-trigger"
+                        onClick={() => setSelectingFor(selectingFor === 'opponent' ? null : 'opponent')}
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Select opponent</span>
+                        <ChevronDown className={`w-4 h-4 chevron ${selectingFor === 'opponent' ? 'open' : ''}`} />
+                      </button>
+                      
+                      {selectingFor === 'opponent' && (
+                        <div className="dropdown-menu">
+                          <div className="dropdown-search">
+                            <Search className="w-4 h-4" />
+                            <input
+                              type="text"
+                              placeholder="Search players..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              autoFocus
+                            />
+                          </div>
+                          <div className="dropdown-list">
+                            {filteredUsers.length === 0 ? (
+                              <div className="no-results">No players found</div>
+                            ) : (
+                              filteredUsers.map(user => (
+                                <div 
+                                  key={user.id}
+                                  className="dropdown-item"
+                                  onClick={() => handleSelectPlayer(user)}
+                                >
+                                  <div className="dropdown-details">
+                                    <span className="dropdown-name">
+                                      {user.firstName} {user.lastName}
+                                    </span>
+                                    <span className="dropdown-elo">ELO: {user.elo || 1200}</span>
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
-                      ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Opponent 2 (for 2v2) */}
+                {matchType === '2v2' && (
+                  <div className="player-dropdown-wrapper">
+                    <label className="player-dropdown-label">Opponent 2</label>
+                    {opponent2 ? (
+                      <div className="player-slot filled">
+                        <div className="player-info">
+                          <div className="player-details">
+                            <span className="player-name">{opponent2.firstName} {opponent2.lastName}</span>
+                            <span className="player-elo">ELO: {opponent2.elo || 1200}</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="remove-player-btn"
+                          onClick={() => removePlayer('opponent2')}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="player-select-dropdown">
+                        <button 
+                          className="dropdown-trigger"
+                          onClick={() => setSelectingFor(selectingFor === 'opponent2' ? null : 'opponent2')}
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          <span>Select second opponent</span>
+                          <ChevronDown className={`w-4 h-4 chevron ${selectingFor === 'opponent2' ? 'open' : ''}`} />
+                        </button>
+                        
+                        {selectingFor === 'opponent2' && (
+                          <div className="dropdown-menu">
+                            <div className="dropdown-search">
+                              <Search className="w-4 h-4" />
+                              <input
+                                type="text"
+                                placeholder="Search players..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                autoFocus
+                              />
+                            </div>
+                            <div className="dropdown-list">
+                              {filteredUsers.length === 0 ? (
+                                <div className="no-results">No players found</div>
+                              ) : (
+                                filteredUsers.map(user => (
+                                  <div 
+                                    key={user.id}
+                                    className="dropdown-item"
+                                    onClick={() => handleSelectPlayer(user)}
+                                  >
+                                    <div className="dropdown-details">
+                                      <span className="dropdown-name">
+                                        {user.firstName} {user.lastName}
+                                      </span>
+                                      <span className="dropdown-elo">ELO: {user.elo || 1200}</span>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* ELO Impact Preview (for ranked) */}
               {matchMode === 'ranked' && opponent && (
@@ -892,30 +941,6 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           gap: var(--spacing-md);
         }
 
-        .player-avatar {
-          width: 40px;
-          height: 40px;
-          border-radius: var(--radius-full);
-          object-fit: cover;
-        }
-
-        .player-avatar-placeholder {
-          width: 40px;
-          height: 40px;
-          border-radius: var(--radius-full);
-          background: var(--gradient-primary);
-          color: var(--white);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          font-size: 0.875rem;
-        }
-
-        .player-avatar-placeholder.opponent {
-          background: linear-gradient(135deg, var(--danger), #d32f2f);
-        }
-
         .player-details {
           display: flex;
           flex-direction: column;
@@ -972,46 +997,90 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           border-radius: var(--radius-full);
         }
 
-        .player-selector {
+        .player-dropdown-wrapper {
+          margin-bottom: var(--spacing-md);
+        }
+
+        .player-dropdown-label {
+          display: block;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--gray);
+          margin-bottom: var(--spacing-xs);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .player-select-dropdown {
+          position: relative;
+        }
+
+        .dropdown-trigger {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+          padding: var(--spacing-md);
+          background: var(--white);
+          border: 1px solid var(--light-gray);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: all var(--transition-base);
+          color: var(--dark-gray);
+          font-size: 0.875rem;
+        }
+
+        .dropdown-trigger:hover {
+          border-color: var(--primary);
+          background: var(--off-white);
+        }
+
+        .dropdown-trigger .chevron {
+          margin-left: auto;
+          transition: transform 0.2s;
+        }
+
+        .dropdown-trigger .chevron.open {
+          transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
           position: absolute;
-          left: var(--spacing-lg);
-          right: var(--spacing-lg);
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
           background: var(--white);
           border: 1px solid var(--light-gray);
           border-radius: var(--radius-md);
           box-shadow: var(--shadow-lg);
           z-index: 20;
-          margin-top: var(--spacing-sm);
+          overflow: hidden;
         }
 
-        .selector-header {
+        .dropdown-search {
           display: flex;
           align-items: center;
           gap: var(--spacing-sm);
           padding: var(--spacing-md);
           border-bottom: 1px solid var(--light-gray);
+          background: var(--off-white);
         }
 
-        .selector-header input {
+        .dropdown-search input {
           flex: 1;
           border: none;
+          background: transparent;
           outline: none;
           font-size: 0.875rem;
+          color: var(--secondary);
         }
 
-        .selector-header button {
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--gray);
-        }
-
-        .selector-list {
+        .dropdown-list {
           max-height: 200px;
           overflow-y: auto;
         }
 
-        .selector-item {
+        .dropdown-item {
           display: flex;
           align-items: center;
           gap: var(--spacing-md);
@@ -1020,41 +1089,22 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           transition: background var(--transition-base);
         }
 
-        .selector-item:hover {
+        .dropdown-item:hover {
           background: var(--light-gray);
         }
 
-        .selector-avatar {
-          width: 32px;
-          height: 32px;
-          border-radius: var(--radius-full);
-          object-fit: cover;
-        }
-
-        .selector-avatar-placeholder {
-          width: 32px;
-          height: 32px;
-          border-radius: var(--radius-full);
-          background: var(--gradient-primary);
-          color: var(--white);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .selector-details {
+        .dropdown-details {
           display: flex;
           flex-direction: column;
         }
 
-        .selector-name {
+        .dropdown-name {
           font-weight: 500;
           font-size: 0.875rem;
+          color: var(--secondary);
         }
 
-        .selector-elo {
+        .dropdown-elo {
           font-size: 0.75rem;
           color: var(--gray);
         }

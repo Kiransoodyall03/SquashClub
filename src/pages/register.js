@@ -29,7 +29,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    age: '',
+    birthDate: '',
     role: 'player',
     registrationPassword: ''
   });
@@ -42,7 +42,7 @@ const Register = () => {
   const [googleFormData, setGoogleFormData] = useState({
     firstName: '',
     lastName: '',
-    age: '',
+    birthDate: '',
     role: 'player',
     registrationPassword: ''
   });
@@ -72,9 +72,16 @@ const Register = () => {
       setError('Password must be at least 6 characters');
       return false;
     }
-    const age = parseInt(formData.age);
+    
+    if (!formData.birthDate) {
+      setError('Birth date is required');
+      return false;
+    }
+
+    const age = calculateAge(formData.birthDate);
+
     if (age < 16 || age > 100) {
-      setError('Age must be between 16 and 100');
+      setError('You must be between 16 and 100 years old');
       return false;
     }
     // Validate registration password
@@ -83,6 +90,17 @@ const Register = () => {
       return false;
     }
     return true;
+  };
+
+  const calculateAge = (birthDateString) => {
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   const handleSubmit = async (e) => {
@@ -96,7 +114,7 @@ const Register = () => {
     const profileData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
-      age: parseInt(formData.age),
+      birthDate: formData.birthDate,
       role: formData.role
     };
 
@@ -184,11 +202,11 @@ const handleGoogleSignup = async () => {
       return;
     }
     
-    // Validate age if provided
-    if (googleFormData.age) {
-      const age = parseInt(googleFormData.age);
+    // Validate birth date if provided
+    if (googleFormData.birthDate) {
+      const age = calculateAge(googleFormData.birthDate);
       if (age < 16 || age > 100) {
-        setError('Age must be between 16 and 100');
+        setError('You must be between 16 and 100 years old');
         return;
       }
     }
@@ -199,7 +217,7 @@ const handleGoogleSignup = async () => {
     const result = await completeGoogleRegistration(googleUser.uid, {
       firstName: googleFormData.firstName,
       lastName: googleFormData.lastName,
-      age: googleFormData.age ? parseInt(googleFormData.age) : null,
+      birthDate: googleFormData.birthDate || null,
       role: googleFormData.role
     });
     
@@ -300,17 +318,14 @@ const handleGoogleSignup = async () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Age (Optional)</label>
+                  <label className="form-label">Birth Date (Optional)</label>
                   <div className="input-wrapper">
                     <Calendar className="input-icon" />
                     <input
-                      type="number"
-                      name="age"
+                      type="date"
+                      name="birthDate"
                       className="form-input with-icon"
-                      placeholder="25"
-                      min="16"
-                      max="100"
-                      value={googleFormData.age}
+                      value={googleFormData.birthDate}
                       onChange={handleGoogleFormChange}
                     />
                   </div>
@@ -676,17 +691,14 @@ const handleGoogleSignup = async () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Age</label>
+                <label className="form-label">Birth Date</label>
                 <div className="input-wrapper">
                   <Calendar className="input-icon" />
                   <input
-                    type="number"
-                    name="age"
+                    type="date"
+                    name="birthDate"
                     className="form-input with-icon"
-                    placeholder="25"
-                    min="16"
-                    max="100"
-                    value={formData.age}
+                    value={formData.birthDate}
                     onChange={handleChange}
                     required
                   />

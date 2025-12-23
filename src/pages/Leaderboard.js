@@ -13,7 +13,7 @@ import { getLeaderboard } from '../firebase/firestore';
 const Leaderboard = ({ userProfile }) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeframe, setTimeframe] = useState('all'); // all, month, week
+  const [category, setCategory] = useState('All');
 
   useEffect(() => {
     loadLeaderboard();
@@ -21,7 +21,7 @@ const Leaderboard = ({ userProfile }) => {
 
   const loadLeaderboard = async () => {
     setLoading(true);
-    const data = await getLeaderboard(50); // Get top 50
+    const data = await getLeaderboard(1000); // Get all players for client-side filtering
     setLeaderboard(data);
     setLoading(false);
   };
@@ -49,7 +49,12 @@ const Leaderboard = ({ userProfile }) => {
     return 'Beginner';
   };
 
-  const userRank = leaderboard.findIndex(player => player.id === userProfile?.id) + 1;
+  const filteredLeaderboard = leaderboard.filter(player => {
+    if (category === 'All') return true;
+    return player.category === category;
+  });
+
+  const userRank = filteredLeaderboard.findIndex(player => player.id === userProfile?.id) + 1;
 
   return (
     <div className="page-container">
@@ -62,6 +67,25 @@ const Leaderboard = ({ userProfile }) => {
             <div>
               <h1>Leaderboard</h1>
               <p className="page-subtitle">Top players ranked by ELO rating</p>
+            </div>
+          </div>
+
+          {/* Category Filters */}
+          <div className="filters-section card">
+            <div className="filter-tabs">
+              {['All', 'Junior', 'Teenager', 'Adult', 'Masters'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`filter-tab ${category === cat ? 'active' : ''}`}
+                >
+                  {cat}
+                  {cat !== 'All' && cat === 'Junior' && ' (<13)'}
+                  {cat !== 'All' && cat === 'Teenager' && ' (<19)'}
+                  {cat !== 'All' && cat === 'Adult' && ' (19-45)'}
+                  {cat !== 'All' && cat === 'Masters' && ' (45+)'}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -99,7 +123,7 @@ const Leaderboard = ({ userProfile }) => {
               <div className="spinner"></div>
               <p>Loading leaderboard...</p>
             </div>
-          ) : leaderboard.length === 0 ? (
+          ) : filteredLeaderboard.length === 0 ? (
             <div className="empty-state card">
               <Trophy className="w-16 h-16 opacity-20" />
               <h3>No players yet</h3>
@@ -108,7 +132,7 @@ const Leaderboard = ({ userProfile }) => {
           ) : (
             <div className="leaderboard-container card">
               <div className="leaderboard-table">
-                {leaderboard.map((player, index) => (
+                {filteredLeaderboard.map((player, index) => (
                   <motion.div
                     key={player.id}
                     className={`leaderboard-row ${player.id === userProfile?.id ? 'current-user' : ''} ${index < 3 ? 'top-three' : ''}`}
@@ -117,7 +141,7 @@ const Leaderboard = ({ userProfile }) => {
                     transition={{ delay: index * 0.05 }}
                   >
                     <div className="rank-cell">
-                      {getRankIcon(player.rank)}
+                      {getRankIcon(index + 1)}
                     </div>
 
                     <div className="player-cell">
@@ -163,6 +187,40 @@ const Leaderboard = ({ userProfile }) => {
       </div>
 
       <style>{`
+        .filters-section {
+          margin-bottom: var(--spacing-xl);
+          padding: var(--spacing-md);
+        }
+
+        .filter-tabs {
+          display: flex;
+          gap: var(--spacing-sm);
+          flex-wrap: wrap;
+        }
+
+        .filter-tab {
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: transparent;
+          border: 1px solid var(--light-gray);
+          border-radius: var(--radius-full);
+          cursor: pointer;
+          transition: all var(--transition-base);
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--gray);
+        }
+
+        .filter-tab:hover {
+          border-color: var(--primary);
+          color: var(--primary);
+        }
+
+        .filter-tab.active {
+          background: var(--primary);
+          border-color: var(--primary);
+          color: var(--white);
+        }
+
         .user-rank-card {
           margin-bottom: var(--spacing-xl);
           background: var(--gradient-primary);

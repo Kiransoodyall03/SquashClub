@@ -33,7 +33,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
   const [formData, setFormData] = useState({
     firstName: initialUserProfile?.firstName || '',
     lastName: initialUserProfile?.lastName || '',
-    age: initialUserProfile?.age || ''
+    birthDate: initialUserProfile?.birthDate || ''
   });
   const [loading, setLoading] = useState(false);
   const [tournaments, setTournaments] = useState([]);
@@ -62,7 +62,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
       setFormData({
         firstName: freshProfile.firstName || '',
         lastName: freshProfile.lastName || '',
-        age: freshProfile.age || ''
+        birthDate: freshProfile.birthDate || ''
       });
     }
     
@@ -125,7 +125,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
     setFormData({
       firstName: userProfile?.firstName || '',
       lastName: userProfile?.lastName || '',
-      age: userProfile?.age || ''
+      birthDate: userProfile?.birthDate || ''
     });
     setEditMode(false);
   };
@@ -135,6 +135,18 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
     : 0;
 
   const lossCount = (userProfile?.matchesPlayed || 0) - (userProfile?.matchesWon || 0);
+
+  const calculateAge = (birthDateString) => {
+    if (!birthDateString) return '-';
+    const birthDate = new Date(birthDateString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   return (
     <div className="profile-page">
@@ -257,15 +269,13 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                 </div>
                 
                 <div className="form-group">
-                  <label className="form-label">Age</label>
+                  <label className="form-label">Birth Date</label>
                   <input
-                    type="number"
-                    name="age"
+                    type="date"
+                    name="birthDate"
                     className="form-input"
-                    value={formData.age}
+                    value={formData.birthDate}
                     onChange={handleChange}
-                    min="16"
-                    max="100"
                   />
                 </div>
                 
@@ -312,7 +322,7 @@ const Profile = ({ user, userProfile: initialUserProfile }) => {
                   <Calendar className="w-5 h-5" />
                   <div>
                     <span className="info-label">Age</span>
-                    <span className="info-value">{userProfile?.age || '-'} years</span>
+                    <span className="info-value">{calculateAge(userProfile?.birthDate)} years</span>
                   </div>
                 </div>
 

@@ -13,6 +13,7 @@ import {
   orderBy, 
   serverTimestamp,
   arrayUnion,
+  arrayRemove,
   increment,
   addDoc
 } from 'firebase/firestore';
@@ -278,6 +279,7 @@ export const createTournament = async (tournamentData) => {
       createdBy: user.uid,
       status: 'upcoming',
       participants: [],
+      pendingParticipants: [],
       matches: [],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -389,16 +391,44 @@ export const updateTournament = async (tournamentId, updates) => {
 };
 
 // Player Tournament Operations
-export const joinTournament = async (tournamentId, userId, userProfile) => {
+export const joinTournament = async (tournamentId, userId, userProfile, password = '') => {
   try {
     const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (!tournamentSnap.exists()) {
+      return { success: false, error: 'Tournament not found' };
+    }
+
+    const tournament = tournamentSnap.data();
+
+    // Check password if set
+    if (tournament.password && tournament.password !== password) {
+      return { success: false, error: 'Incorrect password' };
+    }
+
+    const participantData = {
+      userId,
+      name: `${userProfile.firstName} ${userProfile.lastName}`,
+      elo: userProfile.elo || 1200,
+      joinedAt: new Date().toISOString()
+    };
+
+    if (tournament.requiresApproval) {
+      // Check if already pending
+      if (tournament.pendingParticipants?.some(p => p.userId === userId)) {
+        return { success: false, error: 'Join request already pending' };
+      }
+      
+      await updateDoc(tournamentRef, {
+        pendingParticipants: arrayUnion(participantData),
+        updatedAt: serverTimestamp()
+      });
+      return { success: true, status: 'pending' };
+    }
+
     await updateDoc(tournamentRef, {
-      participants: arrayUnion({
-        userId,
-        name: `${userProfile.firstName} ${userProfile.lastName}`,
-        elo: userProfile.elo || 1200,
-        joinedAt: new Date().toISOString()
-      }),
+      participants: arrayUnion(participantData),
       updatedAt: serverTimestamp()
     });
     
@@ -409,7 +439,7 @@ export const joinTournament = async (tournamentId, userId, userProfile) => {
       updatedAt: serverTimestamp()
     });
     
-    return { success: true };
+    return { success: true, status: 'joined' };
   } catch (error) {
     console.error('Error joining tournament:', error);
     return { success: false, error: error.message };
@@ -454,6 +484,44 @@ export const leaveTournament = async (tournamentId, userId) => {
     return { success: true };
   } catch (error) {
     console.error('Error leaving tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const approveParticipant = async (tournamentId, participant) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    
+    await updateDoc(tournamentRef, {
+      pendingParticipants: arrayRemove(participant),
+      participants: arrayUnion(participant),
+      updatedAt: serverTimestamp()
+    });
+
+    // Update user's tournaments
+    const userRef = doc(db, 'users', participant.userId);
+    await updateDoc(userRef, {
+      tournaments: arrayUnion(tournamentId),
+      updatedAt: serverTimestamp()
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error approving participant:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const rejectParticipant = async (tournamentId, participant) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    await updateDoc(tournamentRef, {
+      pendingParticipants: arrayRemove(participant),
+      updatedAt: serverTimestamp()
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error rejecting participant:', error);
     return { success: false, error: error.message };
   }
 };
@@ -968,6 +1036,25 @@ export const updatePlayerElo = async (userId, eloChange, won) => {
   }
 };
 
+const calculateAge = (birthDateString) => {
+  if (!birthDateString) return 0;
+  const birthDate = new Date(birthDateString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+const getAgeCategory = (age) => {
+  if (age < 13) return 'Junior';
+  if (age < 19) return 'Teenager';
+  if (age < 45) return 'Adult';
+  return 'Masters';
+};
+
 // Leaderboard Operations
 export const getLeaderboard = async (limit = 10) => {
   try {
@@ -984,6 +1071,7 @@ export const getLeaderboard = async (limit = 10) => {
     querySnapshot.forEach((doc) => {
       if (rank <= limit) {
         const userData = doc.data();
+        const age = calculateAge(userData.birthDate);
         leaderboard.push({
           id: doc.id,
           rank,
@@ -993,7 +1081,9 @@ export const getLeaderboard = async (limit = 10) => {
           matchesWon: userData.matchesWon,
           winRate: userData.matchesPlayed > 0 
             ? Math.round((userData.matchesWon / userData.matchesPlayed) * 100) 
-            : 0
+            : 0,
+          age,
+          category: getAgeCategory(age)
         });
         rank++;
       }
