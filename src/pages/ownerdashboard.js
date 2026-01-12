@@ -21,7 +21,7 @@ import {
   getUserProfile
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
-import CreateTournamentModal from '../components/CreateTournamentModal';
+import CreateTournamentModal from '../components/createtournamentmodal';
 
 const OwnerDashboard = () => {
   const [tournaments, setTournaments] = useState([]);
@@ -216,14 +216,6 @@ const loadDashboardData = async () => {
                       {tournament.status}
                     </span>
                   </div>
-                  <div className="tournament-actions">
-                    <button className="action-btn" title="Edit">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button className="action-btn" title="Settings">
-                      <Settings className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
 
                 <div className="tournament-body">
@@ -284,34 +276,6 @@ const loadDashboardData = async () => {
               </button>
             </div>
           )}
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div 
-          className="quick-actions-section"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          <h2>Quick Actions</h2>
-          <div className="quick-actions-grid">
-            <button className="quick-action-card">
-              <Send className="w-8 h-8" />
-              <span>Send Reminders</span>
-            </button>
-            <button className="quick-action-card">
-              <BarChart3 className="w-8 h-8" />
-              <span>View Reports</span>
-            </button>
-            <Link to="/players" className="quick-action-card">
-              <Users className="w-8 h-8" />
-              <span>Manage Players</span>
-            </Link>
-            <Link to="/settings" className="quick-action-card">
-              <Settings className="w-8 h-8" />
-              <span>Club Settings</span>
-            </Link>
-          </div>
         </motion.div>
       </div>
 
@@ -475,46 +439,6 @@ const loadDashboardData = async () => {
 
         .badge-completed {
           background: var(--success);
-        }
-
-        .quick-actions-section {
-          margin-top: var(--spacing-3xl);
-        }
-
-        .quick-actions-section h2 {
-          margin-bottom: var(--spacing-lg);
-        }
-
-        .quick-actions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: var(--spacing-lg);
-        }
-
-        .quick-action-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: var(--spacing-md);
-          padding: var(--spacing-xl);
-          background: var(--white);
-          border: 2px solid var(--light-gray);
-          border-radius: var(--radius-lg);
-          color: var(--secondary);
-          text-decoration: none;
-          cursor: pointer;
-          transition: all var(--transition-base);
-        }
-
-        .quick-action-card:hover {
-          border-color: var(--primary);
-          transform: translateY(-4px);
-          box-shadow: var(--shadow-lg);
-        }
-
-        .quick-action-card span {
-          font-weight: 600;
         }
 
         .empty-state {

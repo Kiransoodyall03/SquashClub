@@ -1,21 +1,25 @@
-// src/components/TournamentDetails.js
+// src/pages/tournamentdetails.js
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, Clock, Users, Trophy, CheckCircle, XCircle, 
   Edit2, AlertCircle, Play, RefreshCw, Flag, Award,
-  Settings, Save, Lock, ShieldAlert, UserPlus, UserMinus
+  Settings, Lock, ShieldAlert, UserPlus, UserMinus,
+  RotateCcw, AlertTriangle
 } from 'lucide-react';
 import { 
   getTournament, joinTournament, leaveTournament, updateMatchScore,
   getMatchesByTournament, generateTournamentGroups, generateGroupMatches,
   updateTournament, completeTournament, getTournamentSummary,
-  updateTournamentGroupSettings, approveParticipant, rejectParticipant
+  updateTournamentGroupSettings, approveParticipant, rejectParticipant,
+  removePlayerAfterMatchesCreated, restartTournament, shouldRestartTournament
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
 import ScoreEntryModal from '../components/scoreEntryModal';
+import PlayerRemovalModal from '../components/PlayerRemovalModal';
+import TournamentRestartModal from '../components/TournamentRestartModal';
 
 const TournamentDetails = ({ userProfile }) => {
   const { id } = useParams();
@@ -39,11 +43,36 @@ const TournamentDetails = ({ userProfile }) => {
   const [password, setPassword] = useState('');
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [joinError, setJoinError] = useState('');
+  
+  // New state for player removal & restart
+  const [showRemovalModal, setShowRemovalModal] = useState(false);
+  const [selectedPlayerForRemoval, setSelectedPlayerForRemoval] = useState(null);
+  const [removingPlayer, setRemovingPlayer] = useState(false);
+  const [removalResult, setRemovalResult] = useState(null);
+  const [showRestartModal, setShowRestartModal] = useState(false);
+  const [restartRecommendation, setRestartRecommendation] = useState(null);
+  const [restartingTournament, setRestartingTournament] = useState(false);
+  const [restartResult, setRestartResult] = useState(null);
+  
   const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
     loadTournamentData();
   }, [id]);
+
+  // Check restart recommendation when tournament is active and has matches
+  useEffect(() => {
+    if (isOwner && tournament?.status === 'active' && matches.length > 0) {
+      checkRestartRecommendation();
+    }
+  }, [tournament, matches, isOwner]);
+
+  const checkRestartRecommendation = async () => {
+    const recommendation = await shouldRestartTournament(id);
+    if (recommendation.success) {
+      setRestartRecommendation(recommendation);
+    }
+  };
 
   const loadTournamentData = async () => {
     setLoading(true);
@@ -58,7 +87,7 @@ const TournamentDetails = ({ userProfile }) => {
     
     // Check if current user is participant
     setIsParticipant(
-      tournamentData.participants?.some(p => p.userId === currentUserId) || false
+      tournamentData.participants?.some(p => p.userId === currentUserId && p.status !== 'no-show') || false
     );
     
     // Check if current user is pending
@@ -71,8 +100,9 @@ const TournamentDetails = ({ userProfile }) => {
     
     // Generate groups if tournament is not upcoming and has participants
     if (tournamentData.status !== 'upcoming' && tournamentData.participants?.length > 0) {
+      const activeParticipants = tournamentData.participants.filter(p => p.status !== 'no-show');
       const generatedGroups = generateTournamentGroups(
-        tournamentData.participants,
+        activeParticipants,
         tournamentData.groupSize || 4
       );
       setGroups(generatedGroups);
@@ -107,9 +137,6 @@ const TournamentDetails = ({ userProfile }) => {
     
     const result = await joinTournament(id, currentUserId, userProfile, password);
     if (result.success) {
-      if (result.status === 'pending') {
-        // Optional: Show a toast or message
-      }
       setShowPasswordInput(false);
       setPassword('');
       loadTournamentData();
@@ -137,43 +164,133 @@ const TournamentDetails = ({ userProfile }) => {
     loadTournamentData();
   };
 
-  // Start tournament manually (owner only)
-  const handleStartTournament = async () => {
-    if (!isOwner || tournament.participants?.length < 2) return;
-    
-    setStartingTournament(true);
-    
-    try {
-      await updateTournament(id, { status: 'active' });
-      await loadTournamentData();
-    } catch (error) {
-      console.error('Error starting tournament:', error);
-    }
-    
-    setStartingTournament(false);
+  // Open removal modal
+  const handleRemovePlayerClick = (participant) => {
+    setSelectedPlayerForRemoval(participant);
+    setShowRemovalModal(true);
+    setRemovalResult(null);
   };
 
-// Update your handleGenerateMatches function
+  // Remove player (after matches created)
+  const handleRemovePlayer = async () => {
+    if (!selectedPlayerForRemoval) return;
+    
+    setRemovingPlayer(true);
+    const result = await removePlayerAfterMatchesCreated(id, selectedPlayerForRemoval.userId);
+    setRemovingPlayer(false);
+    
+    if (result.success) {
+      setRemovalResult(result);
+      await loadTournamentData();
+      await checkRestartRecommendation(); // Update recommendation after removal
+      
+      // Auto-close after 3 seconds
+      setTimeout(() => {
+        setShowRemovalModal(false);
+        setSelectedPlayerForRemoval(null);
+        setRemovalResult(null);
+      }, 3000);
+    } else {
+      setRemovalResult(result);
+    }
+  };
+
+  // Open restart modal
+  const handleRestartClick = async () => {
+    await checkRestartRecommendation();
+    setShowRestartModal(true);
+    setRestartResult(null);
+  };
+
+  // Restart tournament
+  const handleRestartTournament = async () => {
+    setRestartingTournament(true);
+    
+    // Create matches function to pass to restart
+    const createMatches = async (tournamentId, activeParticipants) => {
+      const generatedGroups = generateTournamentGroups(
+        activeParticipants,
+        tournament.groupSize || 4
+      );
+      
+      for (let i = 0; i < generatedGroups.length; i++) {
+        const groupName = `Group ${String.fromCharCode(65 + i)}`;
+        const specificFormat = getGroupFormat(groupName);
+        
+        await generateGroupMatches(
+          tournamentId,
+          specificFormat,
+          generatedGroups[i],
+          groupName
+        );
+      }
+    };
+    
+    const result = await restartTournament(id, createMatches);
+    setRestartingTournament(false);
+    
+    if (result.success) {
+      setRestartResult(result);
+      await loadTournamentData();
+      
+      // Auto-close after 4 seconds
+      setTimeout(() => {
+        setShowRestartModal(false);
+        setRestartResult(null);
+      }, 4000);
+    } else {
+      setRestartResult(result);
+    }
+  };
+
+  // Start tournament manually (owner only)
+const handleStartTournament = async () => {
+  if (!isOwner || activeParticipants.length < 2) return;
+  
+  setStartingTournament(true);
+  
+  try {
+    const now = new Date();
+    
+    // Format date as YYYY-MM-DD
+    const currentDate = now.toISOString().split('T')[0];
+    
+    // Format time as HH:MM
+    const currentTime = now.toTimeString().slice(0, 5);
+    
+    // Update status, date, and time to current system time
+    await updateTournament(id, { 
+      status: 'active',
+      date: currentDate,
+      time: currentTime
+    });
+    await loadTournamentData();
+  } catch (error) {
+    console.error('Error starting tournament:', error);
+  }
+  
+  setStartingTournament(false);
+};
+  // Update your handleGenerateMatches function
   const handleGenerateMatches = async () => {
     if (!isOwner || matches.length > 0) return;
     
     setGeneratingMatches(true);
     
     try {
+      // Use the activeParticipants that's already defined
       const generatedGroups = generateTournamentGroups(
-        tournament.participants,
+        activeParticipants,
         tournament.groupSize || 4
       );
       
       for (let i = 0; i < generatedGroups.length; i++) {
         const groupName = `Group ${String.fromCharCode(65 + i)}`;
-        
-        // CHANGED: Use the helper to get specific group format
         const specificFormat = getGroupFormat(groupName);
 
         await generateGroupMatches(
           id,
-          specificFormat, // Use the specific format here
+          specificFormat,
           generatedGroups[i],
           groupName
         );
@@ -220,14 +337,12 @@ const TournamentDetails = ({ userProfile }) => {
     return match.players?.includes(currentUserId);
   };
 
-  // Handle score submission from modal (NO ELO UPDATE - that happens at tournament end)
+  // Handle score submission from modal
   const handleScoreSubmit = async (matchId, scores, winnerId) => {
     try {
       await updateMatchScore(matchId, scores, winnerId);
-      
       await loadTournamentData();
       setSelectedMatch(null);
-      
       return { success: true };
     } catch (error) {
       console.error('Error submitting score:', error);
@@ -240,7 +355,6 @@ const TournamentDetails = ({ userProfile }) => {
     if (!match.scores || match.scores.length === 0) {
       return '-';
     }
-    
     return match.scores.map((score, i) => (
       `${score.player1}-${score.player2}`
     )).join(', ');
@@ -291,18 +405,9 @@ const TournamentDetails = ({ userProfile }) => {
 
   const handleUpdateGroupFormat = async (groupName, newFormat) => {
     setSavingSettings(true);
-    // If returning to default (null), or setting a specific format
     const settings = newFormat === 'default' ? null : { format: newFormat };
-    
-    // If "default" is selected, we effectively remove the override by setting it to null
-    // However, firestore update needs a value. 
-    // If your backend logic in step 1 allows simple overwrites, we just save the object.
-    
-    // Logic: If 'default', we pass null to indicate removal of override, 
-    // but for the UI flow let's just save the format string or null.
-    
     await updateTournamentGroupSettings(id, groupName, settings);
-    await loadTournamentData(); // Reload to see changes
+    await loadTournamentData();
     setActiveSettingsGroup(null);
     setSavingSettings(false);
   };
@@ -318,6 +423,10 @@ const TournamentDetails = ({ userProfile }) => {
     'Best of 5 to 15',
     'Best of 7 to 11'
   ];
+
+  // Get active participants (excluding no-shows)
+  const activeParticipants = tournament.participants?.filter(p => p.status !== 'no-show') || [];
+  const noShowParticipants = tournament.participants?.filter(p => p.status === 'no-show') || [];
 
   return (
     <div className="tournament-details">
@@ -345,7 +454,7 @@ const TournamentDetails = ({ userProfile }) => {
             </div>
             <div className="info-item">
               <Users className="w-5 h-5" />
-              <span>{tournament.participants?.length || 0} / {tournament.maxParticipants} players</span>
+              <span>{activeParticipants.length} / {tournament.maxParticipants} players</span>
             </div>
             <div className="info-item">
               <Trophy className="w-5 h-5" />
@@ -356,6 +465,31 @@ const TournamentDetails = ({ userProfile }) => {
               {tournament.requiresApproval && <ShieldAlert className="w-5 h-5 text-info" title="Requires Approval" />}
             </div>
           </div>
+
+          {/* No-Show Warning Banner */}
+          {isOwner && restartRecommendation?.shouldRestart && (
+            <motion.div 
+              className="no-show-warning"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <AlertTriangle className="w-5 h-5" />
+              <div className="warning-content">
+                <strong>High no-show rate detected!</strong>
+                <p>
+                  {restartRecommendation.stats.noShowPercentage}% of players are no-shows 
+                  ({restartRecommendation.stats.noShowCount}/{restartRecommendation.stats.totalParticipants})
+                </p>
+                <button 
+                  className="btn btn-small btn-warning"
+                  onClick={handleRestartClick}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Consider Restarting
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           {/* Match Progress */}
           {matches.length > 0 && (
@@ -435,7 +569,7 @@ const TournamentDetails = ({ userProfile }) => {
             {/* Owner Actions */}
             {isOwner && (
               <div className="owner-actions">
-                {tournament.status === 'upcoming' && tournament.participants?.length >= 2 && (
+                {tournament.status === 'upcoming' && activeParticipants.length >= 2 && (
                   <button 
                     className="btn btn-primary"
                     onClick={handleStartTournament}
@@ -446,7 +580,7 @@ const TournamentDetails = ({ userProfile }) => {
                   </button>
                 )}
                 
-                {tournament.status === 'active' && matches.length === 0 && tournament.participants?.length >= 2 && (
+                {tournament.status === 'active' && matches.length === 0 && activeParticipants.length >= 2 && (
                   <button 
                     className="btn btn-success"
                     onClick={handleGenerateMatches}
@@ -458,15 +592,26 @@ const TournamentDetails = ({ userProfile }) => {
                 )}
 
                 {tournament.status === 'active' && matches.length > 0 && (
-                  <button 
-                    className="btn btn-complete"
-                    onClick={handleCompleteTournament}
-                    disabled={completingTournament || !allMatchesCompleted()}
-                    title={!allMatchesCompleted() ? 'Complete all matches first' : 'End tournament and calculate ELO'}
-                  >
-                    <Flag className={`w-5 h-5 ${completingTournament ? 'spin' : ''}`} />
-                    {completingTournament ? 'Completing...' : 'Complete Tournament'}
-                  </button>
+                  <>
+                    <button 
+                      className="btn btn-complete"
+                      onClick={handleCompleteTournament}
+                      disabled={completingTournament || !allMatchesCompleted()}
+                      title={!allMatchesCompleted() ? 'Complete all matches first' : 'End tournament and calculate ELO'}
+                    >
+                      <Flag className={`w-5 h-5 ${completingTournament ? 'spin' : ''}`} />
+                      {completingTournament ? 'Completing...' : 'Complete Tournament'}
+                    </button>
+                    
+                    <button 
+                      className="btn btn-warning"
+                      onClick={handleRestartClick}
+                      title="Restart tournament and recreate matches"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                      Restart Tournament
+                    </button>
+                  </>
                 )}
               </div>
             )}
@@ -561,7 +706,7 @@ const TournamentDetails = ({ userProfile }) => {
                     <th>Played</th>
                     <th>Won</th>
                     <th>Lost</th>
-                    <th>Points +/-</th>
+                    <th>ELO Change</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -575,8 +720,8 @@ const TournamentDetails = ({ userProfile }) => {
                       <td>{player.matchesPlayed}</td>
                       <td className="won-cell">{player.matchesWon}</td>
                       <td className="lost-cell">{player.matchesPlayed - player.matchesWon}</td>
-                      <td className={`diff-cell ${player.pointDifference >= 0 ? 'positive' : 'negative'}`}>
-                        {player.pointDifference >= 0 ? '+' : ''}{player.pointDifference}
+                      <td className={`diff-cell ${(player.eloChange || 0) >= 0 ? 'positive' : 'negative'}`}>
+                        {(player.eloChange || 0) > 0 ? '+' : ''}{player.eloChange || 0}
                       </td>
                     </tr>
                   ))}
@@ -615,17 +760,17 @@ const TournamentDetails = ({ userProfile }) => {
           </motion.div>
         )}
 
-        {/* Participants List */}
+        {/* Active Participants List */}
         <motion.div 
           className="participants-section"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2>Participants ({tournament.participants?.length || 0})</h2>
+          <h2>Active Participants ({activeParticipants.length})</h2>
           <div className="participants-grid">
-            {tournament.participants?.length > 0 ? (
-              tournament.participants.map((participant, index) => (
+            {activeParticipants.length > 0 ? (
+              activeParticipants.map((participant, index) => (
                 <div 
                   key={participant.userId} 
                   className={`participant-card ${participant.userId === currentUserId ? 'is-me' : ''}`}
@@ -638,6 +783,16 @@ const TournamentDetails = ({ userProfile }) => {
                     </span>
                     <span className="participant-elo">ELO: {participant.elo}</span>
                   </div>
+                  {/* Add Remove Button - Only visible to owner when tournament is active with matches */}
+                  {isOwner && tournament.status === 'active' && matches.length > 0 && (
+                    <button 
+                      className="btn-icon btn-remove"
+                      onClick={() => handleRemovePlayerClick(participant)}
+                      title="Mark as no-show"
+                    >
+                      <UserMinus className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ))
             ) : (
@@ -645,6 +800,36 @@ const TournamentDetails = ({ userProfile }) => {
             )}
           </div>
         </motion.div>
+
+        {/* No-Show Participants Section */}
+        {noShowParticipants.length > 0 && (
+          <motion.div 
+            className="no-show-section"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h2>
+              <UserMinus className="w-6 h-6" />
+              No-Show Players ({noShowParticipants.length})
+            </h2>
+            <div className="no-show-grid">
+              {noShowParticipants.map((participant) => (
+                <div key={participant.userId} className="no-show-card">
+                  <UserMinus className="w-5 h-5 text-danger" />
+                  <div className="participant-info">
+                    <span className="participant-name">{participant.name}</span>
+                    <span className="participant-elo">ELO: {participant.elo}</span>
+                  </div>
+                  {participant.removedAt && (
+                    <span className="removed-date">
+                      {new Date(participant.removedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Tournament Groups */}
         {groups.length > 0 && (
@@ -655,12 +840,12 @@ const TournamentDetails = ({ userProfile }) => {
             transition={{ delay: 0.3 }}
           >
             <h2>Tournament Groups</h2>
-<div className="groups-grid">
+            <div className="groups-grid">
               {groups.map((group, groupIndex) => {
                 const groupName = `Group ${String.fromCharCode(65 + groupIndex)}`;
                 const currentFormat = getGroupFormat(groupName);
                 const isCustom = tournament.groupSettings?.[groupName] != null;
-                const hasMatches = matches.some(m => m.groupName === groupName); // ← ADD THIS
+                const hasMatches = matches.some(m => m.groupName === groupName);
 
                 return (
                   <div key={groupIndex} className="group-card card">
@@ -892,6 +1077,26 @@ const TournamentDetails = ({ userProfile }) => {
           isOwner={isOwner}
         />
       )}
+
+      {/* Player Removal Modal */}
+      <PlayerRemovalModal
+        isOpen={showRemovalModal}
+        onClose={() => setShowRemovalModal(false)}
+        player={selectedPlayerForRemoval}
+        onConfirm={handleRemovePlayer}
+        isRemoving={removingPlayer}
+        result={removalResult}
+      />
+
+      {/* Tournament Restart Modal */}
+      <TournamentRestartModal
+        isOpen={showRestartModal}
+        onClose={() => setShowRestartModal(false)}
+        onConfirm={handleRestartTournament}
+        isRestarting={restartingTournament}
+        result={restartResult}
+        recommendation={restartRecommendation}
+      />
 
       <style>{`
       .tournament-details {
@@ -1138,6 +1343,8 @@ const TournamentDetails = ({ userProfile }) => {
       .popover-options {
         display: flex;
         flex-direction: column;
+        max-height: 250px;
+        overflow-y: auto;
       }
 
       .popover-option {
@@ -1854,6 +2061,138 @@ const TournamentDetails = ({ userProfile }) => {
         
         .pending-actions {
           align-self: flex-end;
+        }
+
+        /* No-Show Warning Banner */
+        .no-show-warning {
+          display: flex;
+          align-items: flex-start;
+          gap: var(--spacing-md);
+          padding: var(--spacing-lg);
+          background: linear-gradient(135deg, rgba(255, 152, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+          border: 2px solid var(--warning);
+          border-radius: var(--radius-lg);
+          margin-bottom: var(--spacing-lg);
+        }
+
+        .no-show-warning svg {
+          color: var(--warning);
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .warning-content {
+          flex: 1;
+        }
+
+        .warning-content strong {
+          display: block;
+          color: var(--secondary);
+          margin-bottom: var(--spacing-xs);
+          font-size: 1.1rem;
+        }
+
+        .warning-content p {
+          color: var(--gray);
+          margin-bottom: var(--spacing-sm);
+          font-size: 0.9rem;
+        }
+
+        /* Participant Card with Remove Button */
+        .participant-card {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+          padding: var(--spacing-md);
+          background: var(--white);
+          border: 2px solid var(--light-gray);
+          border-radius: var(--radius-md);
+          transition: all var(--transition-base);
+        }
+
+        .participant-card:hover .btn-remove {
+          opacity: 1;
+        }
+
+        .btn-remove {
+          position: absolute;
+          top: var(--spacing-sm);
+          right: var(--spacing-sm);
+          opacity: 0;
+          transition: opacity var(--transition-base);
+          padding: var(--spacing-xs);
+          background: rgba(244, 67, 54, 0.1);
+          border: none;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          color: var(--danger);
+        }
+
+        .btn-remove:hover {
+          background: var(--danger);
+          color: var(--white);
+        }
+
+        /* No-Show Section */
+        .no-show-section {
+          margin-top: var(--spacing-xl);
+          padding: var(--spacing-lg);
+          background: rgba(244, 67, 54, 0.05);
+          border-radius: var(--radius-lg);
+        }
+
+        .no-show-section h2 {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          color: var(--danger);
+          margin-bottom: var(--spacing-md);
+        }
+
+        .no-show-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          gap: var(--spacing-md);
+        }
+
+        .no-show-card {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+          padding: var(--spacing-md);
+          background: var(--white);
+          border: 2px solid rgba(244, 67, 54, 0.3);
+          border-radius: var(--radius-md);
+          opacity: 0.7;
+        }
+
+        .no-show-card .participant-name {
+          text-decoration: line-through;
+          color: var(--gray);
+        }
+
+        /* Warning Button Style */
+        .btn-warning {
+          background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+          color: var(--white);
+          border: none;
+        }
+
+        .btn-warning:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+
+        .btn-warning:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+          .no-show-grid {
+            grid-template-columns: 1fr;
+          }
         }
       }
       `}</style>

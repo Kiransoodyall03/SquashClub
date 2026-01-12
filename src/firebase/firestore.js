@@ -173,9 +173,400 @@ export const enableUser = async (userId) => {
   }
 };
 
+export const removePlayerAfterMatchesCreated = async (tournamentId, userId) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (!tournamentSnap.exists()) {
+      return { success: false, error: 'Tournament not found' };
+    }
+    
+    const tournamentData = tournamentSnap.data();
+    
+    // Check if tournament has started
+    if (tournamentData.status !== 'active' && tournamentData.status !== 'in-progress') {
+      return { 
+        success: false, 
+        error: 'Tournament has not started yet. Use removePlayerFromTournament instead.' 
+      };
+    }
+    
+    // Verify player is in tournament
+    const isParticipant = (tournamentData.participants || []).some(p => p.userId === userId);
+    if (!isParticipant) {
+      return { success: false, error: 'Player not found in tournament' };
+    }
+    
+    // Find all matches involving this player
+    const matchesRef = collection(db, 'matches');
+    const q = query(
+      matchesRef,
+      where('tournamentId', '==', tournamentId)
+    );
+    
+    const matchesSnap = await getDocs(q);
+    let affectedMatches = [];
+    
+    // Get current timestamp as ISO string for use in arrayUnion
+    const currentTimestamp = new Date().toISOString();
+    
+    // Process each match
+    for (const matchDoc of matchesSnap.docs) {
+      const matchData = matchDoc.data();
+      
+      // Only process pending or in-progress matches
+      if (matchData.status !== 'pending' && matchData.status !== 'in-progress') {
+        continue;
+      }
+      
+      const isPlayer1 = matchData.player1Id === userId;
+      const isPlayer2 = matchData.player2Id === userId;
+      
+      if (isPlayer1 || isPlayer2) {
+        affectedMatches.push(matchDoc.id);
+        
+        const matchRef = doc(db, 'matches', matchDoc.id);
+        
+        if (isPlayer1 && matchData.player2Id) {
+          // Player 1 is no-show, Player 2 wins by walkover
+          await updateDoc(matchRef, {
+            status: 'completed',
+            winner: matchData.player2Id,
+            scores: [{ player1: 0, player2: 21 }], // Default walkover score
+            completedAt: serverTimestamp(),
+            walkover: true,
+            noShowPlayer: userId,
+            updatedAt: serverTimestamp()
+          });
+        } else if (isPlayer2 && matchData.player1Id) {
+          // Player 2 is no-show, Player 1 wins by walkover
+          await updateDoc(matchRef, {
+            status: 'completed',
+            winner: matchData.player1Id,
+            scores: [{ player1: 21, player2: 0 }], // Default walkover score
+            completedAt: serverTimestamp(),
+            walkover: true,
+            noShowPlayer: userId,
+            updatedAt: serverTimestamp()
+          });
+        } else {
+          // Match with no opponent (shouldn't happen, but handle it)
+          await updateDoc(matchRef, {
+            status: 'cancelled',
+            cancelReason: 'Player no-show',
+            noShowPlayer: userId,
+            updatedAt: serverTimestamp()
+          });
+        }
+      }
+    }
+    
+    // Update tournament - mark player as no-show
+    const updatedParticipants = (tournamentData.participants || []).map(p => {
+      if (p.userId === userId) {
+        return { ...p, status: 'no-show', removedAt: currentTimestamp };
+      }
+      return p;
+    });
+    
+    await updateDoc(tournamentRef, {
+      participants: updatedParticipants,
+      noShowPlayers: arrayUnion({
+        userId,
+        removedAt: currentTimestamp, // Use ISO string instead of serverTimestamp()
+        affectedMatches
+      }),
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update user's tournaments list
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      const updatedTournaments = (userData.tournaments || []).filter(
+        t => t !== tournamentId
+      );
+      
+      await updateDoc(userRef, {
+        tournaments: updatedTournaments,
+        noShowTournaments: arrayUnion({
+          tournamentId,
+          date: currentTimestamp // Use ISO string instead of serverTimestamp()
+        }),
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    console.log(`Removed player ${userId} from active tournament ${tournamentId}`);
+    console.log(`Affected matches: ${affectedMatches.length}`);
+    
+    return { 
+      success: true, 
+      affectedMatches: affectedMatches.length,
+      message: `Player removed and ${affectedMatches.length} match(es) resolved with walkover`
+    };
+    
+  } catch (error) {
+    console.error('Error removing player from active tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+/**
+ * Restart tournament - deletes all matches and recreates the bracket
+ * Use this when too many players are no-shows
+ */
+export const restartTournament = async (tournamentId, createMatchesFunction) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (!tournamentSnap.exists()) {
+      return { success: false, error: 'Tournament not found' };
+    }
+    
+    const tournamentData = tournamentSnap.data();
+    
+    // Remove all no-show players from participants list
+    const activeParticipants = (tournamentData.participants || []).filter(
+      p => p.status !== 'no-show'
+    );
+    
+    if (activeParticipants.length < 2) {
+      return { 
+        success: false, 
+        error: 'Not enough active participants to restart tournament (minimum 2 required)' 
+      };
+    }
+    
+    // Delete all existing matches
+    const matchesRef = collection(db, 'matches');
+    const q = query(matchesRef, where('tournamentId', '==', tournamentId));
+    const matchesSnap = await getDocs(q);
+    
+    let deletedMatchCount = 0;
+    
+    // Delete matches one by one
+    for (const matchDoc of matchesSnap.docs) {
+      await deleteDoc(doc(db, 'matches', matchDoc.id));
+      deletedMatchCount++;
+    }
+    
+    // Reset tournament to "upcoming" status with only active participants
+    await updateDoc(tournamentRef, {
+      status: 'upcoming',
+      participants: activeParticipants,
+      participantCount: activeParticipants.length,
+      currentRound: 0,
+      startedAt: null,
+      restartedAt: serverTimestamp(),
+      restartCount: (tournamentData.restartCount || 0) + 1,
+      previousNoShows: tournamentData.noShowPlayers || [],
+      noShowPlayers: [], // Clear current no-shows
+      updatedAt: serverTimestamp()
+    });
+    
+    console.log(`Tournament ${tournamentId} restarted`);
+    console.log(`Deleted ${deletedMatchCount} matches`);
+    console.log(`Active participants: ${activeParticipants.length}`);
+    
+    // Recreate matches with active participants
+    let newMatches = null;
+    if (createMatchesFunction) {
+      try {
+        newMatches = await createMatchesFunction(tournamentId, activeParticipants);
+        console.log('New matches created successfully');
+      } catch (error) {
+        console.error('Error creating new matches:', error);
+        return {
+          success: true,
+          warning: 'Tournament reset but failed to create new matches',
+          deletedMatches: deletedMatchCount,
+          activeParticipants: activeParticipants.length,
+          error: error.message
+        };
+      }
+    }
+    
+    return { 
+      success: true,
+      deletedMatches: deletedMatchCount,
+      activeParticipants: activeParticipants.length,
+      removedPlayers: (tournamentData.participants?.length || 0) - activeParticipants.length,
+      newMatches: newMatches ? newMatches.length : 0,
+      message: `Tournament restarted with ${activeParticipants.length} active players`
+    };
+    
+  } catch (error) {
+    console.error('Error restarting tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Helper function to check if tournament should be restarted
+ * Returns recommendation based on no-show ratio
+ */
+export const shouldRestartTournament = async (tournamentId) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (!tournamentSnap.exists()) {
+      return { success: false, error: 'Tournament not found' };
+    }
+    
+    const tournamentData = tournamentSnap.data();
+    const totalParticipants = tournamentData.participants?.length || 0;
+    const noShowCount = tournamentData.participants?.filter(p => p.status === 'no-show').length || 0;
+    const activeCount = totalParticipants - noShowCount;
+    const noShowRatio = totalParticipants > 0 ? noShowCount / totalParticipants : 0;
+    
+    return {
+      success: true,
+      shouldRestart: noShowRatio >= 0.25, // Recommend restart if 25%+ are no-shows
+      recommendation: noShowRatio >= 0.25 
+        ? 'High no-show rate detected. Consider restarting tournament.'
+        : noShowRatio > 0 
+          ? 'Some no-shows detected. You can continue or restart.'
+          : 'No issues detected.',
+      stats: {
+        totalParticipants,
+        noShowCount,
+        activeCount,
+        noShowPercentage: Math.round(noShowRatio * 100)
+      }
+    };
+    
+  } catch (error) {
+    console.error('Error checking tournament status:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const removePlayerFromTournament = async (tournamentId, userId) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (!tournamentSnap.exists()) {
+      return { success: false, error: 'Tournament not found' };
+    }
+    
+    const tournamentData = tournamentSnap.data();
+    
+    // Remove from participants
+    const updatedParticipants = (tournamentData.participants || []).filter(
+      p => p.userId !== userId
+    );
+    
+    // Remove from pendingParticipants as well, just in case
+    const updatedPendingParticipants = (tournamentData.pendingParticipants || []).filter(
+      p => p.userId !== userId
+    );
+    
+    await updateDoc(tournamentRef, {
+      participants: updatedParticipants,
+      pendingParticipants: updatedPendingParticipants,
+      updatedAt: serverTimestamp()
+    });
+    
+    // Update user's tournaments list
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      const updatedTournaments = (userData.tournaments || []).filter(
+        t => t !== tournamentId
+      );
+      
+      await updateDoc(userRef, {
+        tournaments: updatedTournaments,
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    console.log(`Removed player ${userId} from tournament ${tournamentId}`); // ✅ FIXED
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing player from tournament:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const removePlayerFromActiveTournaments = async (userId) => {
+  try {
+    console.log('Removing player from active tournaments:', userId);
+    
+    const q = query(
+      collection(db, 'tournaments'),
+      where('status', 'in', ['upcoming', 'active'])
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const updatePromises = [];
+    const tournamentIdsRemoved = [];
+    
+    for (const docSnap of querySnapshot.docs) {
+      const tournament = docSnap.data();
+      const participants = tournament.participants || [];
+      const pendingParticipants = tournament.pendingParticipants || [];
+      
+      const isParticipant = participants.some(p => p.userId === userId);
+      const isPending = pendingParticipants.some(p => p.userId === userId);
+      
+      if (isParticipant || isPending) {
+        const tournamentRef = doc(db, 'tournaments', docSnap.id);
+        const updates = { updatedAt: serverTimestamp() };
+        
+        if (isParticipant) {
+          updates.participants = participants.filter(p => p.userId !== userId);
+        }
+        
+        if (isPending) {
+          updates.pendingParticipants = pendingParticipants.filter(p => p.userId !== userId);
+        }
+        
+        updatePromises.push(updateDoc(tournamentRef, updates));
+        tournamentIdsRemoved.push(docSnap.id);
+      }
+    }
+    
+    await Promise.all(updatePromises);
+    
+    // Update user's tournaments list if user doc exists
+    if (tournamentIdsRemoved.length > 0) {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const currentTournaments = userData.tournaments || [];
+        const updatedTournaments = currentTournaments.filter(tId => !tournamentIdsRemoved.includes(tId));
+        
+        await updateDoc(userRef, {
+          tournaments: updatedTournaments,
+          updatedAt: serverTimestamp()
+        });
+      }
+    }
+    
+    console.log(`Removed player ${userId} from ${tournamentIdsRemoved.length} active tournaments`);
+    return { success: true, removedCount: tournamentIdsRemoved.length };
+  } catch (error) {
+    console.error('Error removing player from active tournaments:', error);
+    return { success: false, error: error.message };
+  }
+};
 // Remove a user from the club (permanent deletion)
 export const removeUserFromClub = async (userId) => {
   try {
+    // First remove from any active tournaments
+    await removePlayerFromActiveTournaments(userId);
+
     // Delete user document
     const userRef = doc(db, 'users', userId);
     await deleteDoc(userRef);
@@ -1178,85 +1569,28 @@ export const generateGroupMatches = async (tournamentId, tournamentFormat, group
   return matches;
 };
 
-// Statistics Operations
 export const getPlayerStatistics = async (userId) => {
   try {
- const tournamentMatches = await getMatchesByPlayer(userId);
-    const individualMatches = await getIndividualMatchesByPlayer(userId);
+    const userProfile = await getUserProfile(userId);
 
-    const allMatches = [...tournamentMatches, ...individualMatches];
+    if (!userProfile) {
+      return null;
+    }
 
-    const enhancedMatches = allMatches.map(match => {
-      // Tournament match
-      if (match.tournamentId) {
-        const isPlayer1 = match.player1Id === userId;
-        const won = match.winner === userId;
-        const opponentName = isPlayer1 ? match.player2Name : match.player1Name;
-        
-        let playerScore = 0;
-        let opponentScore = 0;
-        
-        match.scores?.forEach(score => {
-          if (isPlayer1) {
-            playerScore += score.player1 || 0;
-            opponentScore += score.player2 || 0;
-          } else {
-            playerScore += score.player2 || 0;
-            opponentScore += score.player1 || 0;
-          }
-        });
+    const matchesPlayed = userProfile.matchesPlayed || 0;
+    const matchesWon = userProfile.matchesWon || 0;
+    const winRate = matchesPlayed > 0
+      ? Math.round((matchesWon / matchesPlayed) * 100)
+      : 0;
 
-        return {
-          ...match,
-          won,
-          opponentName,
-          playerScore,
-          opponentScore,
-          scoreDisplay: match.scores?.map(s => 
-            isPlayer1 ? `${s.player1}-${s.player2}` : `${s.player2}-${s.player1}`
-          ).join(', ') || '-',
-          contextDisplay: match.groupName || 'Tournament'
-        };
-      } 
-      // Individual match
-      else {
-        const isUserInTeam1 = match.team1.some(p => p.id === userId);
-        const won = (isUserInTeam1 && match.winner === 'team1') || (!isUserInTeam1 && match.winner === 'team2');
-        
-        const opponentTeam = isUserInTeam1 ? match.team2 : match.team1;
-        const opponentName = opponentTeam.map(p => p.name).join(' & ');
-
-        let playerScore = 0;
-        let opponentScore = 0;
-
-        match.scores?.forEach(score => {
-          if (isUserInTeam1) {
-            playerScore += score.team1 || 0;
-            opponentScore += score.team2 || 0;
-          } else {
-            playerScore += score.team2 || 0;
-            opponentScore += score.team1 || 0;
-          }
-        });
-
-        return {
-          ...match,
-          won,
-          opponentName,
-          playerScore,
-          opponentScore,
-          scoreDisplay: match.scores?.map(s => 
-            isUserInTeam1 ? `${s.team1}-${s.team2}` : `${s.team2}-${s.team1}`
-          ).join(', ') || '-',
-          contextDisplay: `${match.matchMode.charAt(0).toUpperCase() + match.matchMode.slice(1)} ${match.matchType}`
-        };
-      }
-    });
-
-    // Sort all matches by date
-    enhancedMatches.sort((a, b) => b.createdAt.toDate() - a.createdAt.toDate());
-
-    return enhancedMatches;
+    return {
+      currentElo: userProfile.elo || 1200,
+      lastEloChange: userProfile.lastEloChange || 0,
+      matchesPlayed,
+      matchesWon,
+      winRate,
+      tournamentsPlayed: userProfile.tournamentsPlayed || 0
+    };
   } catch (error) {
     console.error('Error getting player statistics:', error);
     return null;
@@ -1266,7 +1600,7 @@ export const getPlayerStatistics = async (userId) => {
 // Generate WhatsApp link for tournament invitation
 export const generateWhatsAppLink = (tournamentId, tournamentName, date) => {
   const baseUrl = window.location.origin;
-  const joinUrl = `${baseUrl}/join/${tournamentId}`;
+  const joinUrl = `${baseUrl}/register?redirect=/tournament/${tournamentId}`;
   const message = encodeURIComponent(
     `🏸 You're invited to ${tournamentName}!\n\n` +
     `📅 Date: ${date}\n` +

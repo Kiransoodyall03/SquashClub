@@ -18,7 +18,7 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
   const [formData, setFormData] = useState({
     firstName: user?.displayName?.split(' ')[0] || '',
     lastName: user?.displayName?.split(' ').slice(1).join(' ') || '',
-    age: '',
+    birthDate: '',
     role: 'player',
     registrationPassword: ''
   });
@@ -42,11 +42,18 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
       return;
     }
     
-    // Validate age if provided
-    if (formData.age) {
-      const age = parseInt(formData.age);
-      if (age < 16 || age > 100) {
-        setError('Age must be between 16 and 100');
+    // Validate birth date if provided
+    if (formData.birthDate) {
+      const birthDate = new Date(formData.birthDate);
+      const today = new Date();
+      const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+      
+      if (age < 16) {
+        setError('You must be at least 16 years old to register');
+        return;
+      }
+      if (age > 100) {
+        setError('Please enter a valid birth date');
         return;
       }
     }
@@ -62,7 +69,7 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
         lastName: formData.lastName,
         email: user.email,
         role: formData.role,
-        age: formData.age ? parseInt(formData.age) : null,
+        birthDate: formData.birthDate || null,
         photoURL: user.photoURL || null,
         authProvider: user.providerData[0]?.providerId || 'unknown'
       };
@@ -176,18 +183,16 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Age (Optional)</label>
+                <label className="form-label">Birth Date (Optional)</label>
                 <div className="input-wrapper">
                   <Calendar className="input-icon" />
                   <input
-                    type="number"
-                    name="age"
+                    type="date"
+                    name="birthDate"
                     className="form-input with-icon"
-                    placeholder="25"
-                    min="16"
-                    max="100"
-                    value={formData.age}
+                    value={formData.birthDate}
                     onChange={handleChange}
+                    max={new Date().toISOString().split('T')[0]}
                   />
                 </div>
               </div>

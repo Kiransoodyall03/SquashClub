@@ -407,7 +407,7 @@ const Leaderboard = ({ userProfile }) => {
         .elo-expert { color: #ef4444; }
         .elo-advanced { color: #f59e0b; }
         .elo-intermediate { color: #3b82f6; }
-        .elo-beginner { color: #6b7280; }
+        .elo-beginner { color: #666666ff; }
 
         .loading-state, .empty-state {
           display: flex;
