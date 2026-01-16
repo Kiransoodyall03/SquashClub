@@ -529,6 +529,15 @@ export const rejectParticipant = async (tournamentId, participant) => {
 // ============================================
 // ADVANCED DYNAMIC ELO CALCULATION
 // ============================================
+// Dynamic K-factor system with smooth transitions:
+// - New players (0-10 matches): K = 50-40 (very volatile, rapid placement)
+// - Establishing players (11-30 matches): K = 40-32 (settling into rating)
+// - Regular players (31-100 matches): K = 32-24 (standard progression)
+// - Experienced players (101-200 matches): K = 24-20 (more stable)
+// - Veteran players (200+ matches): K = 20-16 (highly stable)
+// - Elite players (2400+ rating): Additional -4 to K-factor (maximum stability)
+// ============================================
+
 export const calculateEloChange = (playerElo, opponentElo, playerWon, matchesPlayed = 0) => {
   // Calculate base K-factor with smooth transitions based on experience
   let K;
