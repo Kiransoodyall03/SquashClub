@@ -527,37 +527,100 @@ export const rejectParticipant = async (tournamentId, participant) => {
 };
 
 // ============================================
-// CHESS.COM STYLE ELO CALCULATION
+// ADVANCED DYNAMIC ELO CALCULATION
 // ============================================
-// K-factor varies based on player's rating and games played:
-// - K = 40 for new players (< 30 games) - ratings change faster
-// - K = 20 for players rated 2400+ - ratings more stable
-// - K = 32 for everyone else (standard)
+// Dynamic K-factor system with smooth transitions:
+// - New players (0-10 matches): K = 50-40 (very volatile, rapid placement)
+// - Establishing players (11-30 matches): K = 40-32 (settling into rating)
+// - Regular players (31-100 matches): K = 32-24 (standard progression)
+// - Experienced players (101-200 matches): K = 24-20 (more stable)
+// - Veteran players (200+ matches): K = 20-16 (highly stable)
+// - Elite players (2400+ rating): Additional -4 to K-factor (maximum stability)
 // ============================================
+
 export const calculateEloChange = (playerElo, opponentElo, playerWon, matchesPlayed = 0) => {
-  // Determine K-factor based on Chess.com rules
-  let K = 32; // Default K-factor
+  // Calculate base K-factor with smooth transitions based on experience
+  let K;
   
-  if (matchesPlayed < 30) {
-    // New players: Higher K-factor means ratings change faster
-    // This helps new players find their true rating quickly
-    K = 40;
-  } else if (playerElo >= 2400) {
-    // High-rated players: Lower K-factor means ratings are more stable
-    // This prevents wild swings at the top of the rating pool
-    K = 20;
+  // Phase 1: Rapid Placement (0-10 matches)
+  if (matchesPlayed <= 10) {
+    K = 50 - (matchesPlayed * 1.0);
+  }
+  // Phase 2: Settling Period (11-30 matches)
+  else if (matchesPlayed <= 30) {
+    K = 40 - ((matchesPlayed - 10) * 0.4);
+  }
+  // Phase 3: Standard Progression (31-100 matches)
+  else if (matchesPlayed <= 100) {
+    K = 32 - ((matchesPlayed - 30) * 0.114);
+  }
+  // Phase 4: Experienced Stability (101-200 matches)
+  else if (matchesPlayed <= 200) {
+    K = 24 - ((matchesPlayed - 100) * 0.04);
+  }
+  // Phase 5: Veteran Stability (200+ matches)
+  else {
+    K = Math.max(20 - ((matchesPlayed - 200) * 0.02), 16);
   }
   
-  // Expected score formula (same as Chess.com and standard ELO)
-  // This calculates the probability of winning based on rating difference
+  // Elite Rating Adjustment
+  if (playerElo >= 2400) {
+    K = Math.max(K - 4, 12);
+  } else if (playerElo >= 2200) {
+    K = Math.max(K - 2, 14);
+  }
+  
+  // Apply upset multiplier for dramatic results
+  const ratingDiff = Math.abs(playerElo - opponentElo);
+  let upsetMultiplier = 1.0;
+  
+  if (ratingDiff >= 200) {
+    const isUpset = (playerWon && playerElo < opponentElo) || 
+                    (!playerWon && playerElo > opponentElo);
+    
+    // Upset victory: Amplify the gain
+    if (isUpset && playerWon) {
+      if (ratingDiff >= 400) upsetMultiplier = 1.3;
+      else if (ratingDiff >= 300) upsetMultiplier = 1.2;
+      else upsetMultiplier = 1.15;
+    }
+    // Expected victory against much weaker opponent: Reduce the gain
+    else if (!isUpset && playerWon && ratingDiff >= 300) {
+      upsetMultiplier = 0.85;
+    }
+    // Upset loss: Amplify the loss
+    else if (isUpset && !playerWon) {
+      if (ratingDiff >= 400) upsetMultiplier = 1.25;
+      else if (ratingDiff >= 300) upsetMultiplier = 1.15;
+      else upsetMultiplier = 1.1;
+    }
+  }
+  
+  // Expected score formula (standard ELO)
   const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
   
   // Actual score: 1 for win, 0 for loss
-  // (Chess.com also uses 0.5 for draws, but squash doesn't have draws)
   const actualScore = playerWon ? 1 : 0;
   
-  // ELO change calculation
-  const eloChange = Math.round(K * (actualScore - expectedScore));
+  // Base ELO change calculation
+  let eloChange = K * (actualScore - expectedScore);
+  
+  // Apply upset multiplier
+  eloChange *= upsetMultiplier;
+  
+  // Apply diminishing returns for very high ratings
+  if (playerElo >= 2200) {
+    const deflationFactor = 1 - ((playerElo - 2200) / 4000);
+    eloChange *= Math.max(deflationFactor, 0.85);
+  }
+  
+  // Round to nearest integer
+  eloChange = Math.round(eloChange);
+  
+  // Ensure minimum change of ±1 for experienced players
+  if (eloChange === 0 && matchesPlayed > 100) {
+    eloChange = playerWon ? 1 : -1;
+  }
   
   return eloChange;
 };
@@ -1036,8 +1099,6 @@ export const updatePlayerElo = async (userId, eloChange, won) => {
   }
 };
 
-<<<<<<< HEAD
-=======
 const calculateAge = (birthDateString) => {
   if (!birthDateString) return 0;
   const birthDate = new Date(birthDateString);
@@ -1058,7 +1119,6 @@ const getAgeCategory = (age) => {
 };
 
 // Leaderboard Operations
->>>>>>> BetterTournament
 export const getLeaderboard = async (limit = 10) => {
   try {
     const q = query(
