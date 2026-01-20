@@ -7,19 +7,22 @@ import {
   Calendar, Clock, Users, Trophy, CheckCircle, XCircle, 
   Edit2, AlertCircle, Play, RefreshCw, Flag, Award,
   Settings, Lock, ShieldAlert, UserPlus, UserMinus,
-  RotateCcw, AlertTriangle
+  RotateCcw, AlertTriangle, Trash2
 } from 'lucide-react';
 import { 
   getTournament, joinTournament, leaveTournament, updateMatchScore,
   getMatchesByTournament, generateTournamentGroups, generateGroupMatches,
   updateTournament, completeTournament, getTournamentSummary,
   updateTournamentGroupSettings, approveParticipant, rejectParticipant,
-  removePlayerAfterMatchesCreated, restartTournament, shouldRestartTournament
+  removePlayerAfterMatchesCreated, restartTournament, shouldRestartTournament,
+  deleteTournament
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
 import ScoreEntryModal from '../components/scoreEntryModal';
 import PlayerRemovalModal from '../components/PlayerRemovalModal';
 import TournamentRestartModal from '../components/TournamentRestartModal';
+import TournamentDeleteModal from '../components/TournamentDeleteModal';
+
 
 const TournamentDetails = ({ userProfile }) => {
   const { id } = useParams();
@@ -53,6 +56,9 @@ const TournamentDetails = ({ userProfile }) => {
   const [restartRecommendation, setRestartRecommendation] = useState(null);
   const [restartingTournament, setRestartingTournament] = useState(false);
   const [restartResult, setRestartResult] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTournament, setDeletingTournament] = useState(false);
+  const [deleteResult, setDeleteResult] = useState(null);
   
   const currentUserId = auth.currentUser?.uid;
 
@@ -243,6 +249,25 @@ const TournamentDetails = ({ userProfile }) => {
     }
   };
 
+  // Delete tournament
+  const handleDeleteTournament = async () => {
+    setDeletingTournament(true);
+    
+    const result = await deleteTournament(id);
+    setDeletingTournament(false);
+    
+    if (result.success) {
+      setDeleteResult(result);
+      
+      // Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } else {
+      setDeleteResult(result);
+    }
+  };
+
   // Start tournament manually (owner only)
 const handleStartTournament = async () => {
   if (!isOwner || activeParticipants.length < 2) return;
@@ -330,9 +355,10 @@ const handleStartTournament = async () => {
   };
 
   // Check if user can edit a specific match
+  // UPDATED: Now allows editing completed matches (only tournament completion prevents editing)
   const canEditMatch = (match) => {
     if (tournament.status === 'completed') return false;
-    if (match.status === 'completed') return false;
+    // Removed the check for match.status === 'completed' to allow re-editing scores
     if (isOwner) return true;
     return match.players?.includes(currentUserId);
   };
@@ -570,14 +596,25 @@ const handleStartTournament = async () => {
             {isOwner && (
               <div className="owner-actions">
                 {tournament.status === 'upcoming' && activeParticipants.length >= 2 && (
-                  <button 
-                    className="btn btn-primary"
-                    onClick={handleStartTournament}
-                    disabled={startingTournament}
-                  >
-                    <Play className="w-5 h-5" />
-                    {startingTournament ? 'Starting...' : 'Start Tournament'}
-                  </button>
+                  <>
+                    <button 
+                      className="btn btn-primary"
+                      onClick={handleStartTournament}
+                      disabled={startingTournament}
+                    >
+                      <Play className="w-5 h-5" />
+                      {startingTournament ? 'Starting...' : 'Start Tournament'}
+                    </button>
+
+                    <button 
+                      className="btn btn-danger"
+                      onClick={() => setShowDeleteModal(true)}
+                      title="Delete this tournament"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      Delete
+                    </button>
+                  </>
                 )}
                 
                 {tournament.status === 'active' && matches.length === 0 && activeParticipants.length >= 2 && (
@@ -610,6 +647,15 @@ const handleStartTournament = async () => {
                     >
                       <RotateCcw className="w-5 h-5" />
                       Restart Tournament
+                    </button>
+
+                    <button 
+                      className="btn btn-danger"
+                      onClick={() => setShowDeleteModal(true)}
+                      title="Delete this tournament permanently"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                      Delete Tournament
                     </button>
                   </>
                 )}
@@ -1003,13 +1049,8 @@ const handleStartTournament = async () => {
                                 onClick={() => setSelectedMatch(match)}
                               >
                                 <Edit2 className="w-4 h-4" />
-                                Enter Score
+                                {match.status === 'completed' ? 'Edit Score' : 'Enter Score'}
                               </button>
-                            ) : match.status === 'completed' ? (
-                              <span className="completed-text">
-                                <CheckCircle className="w-4 h-4" />
-                                Done
-                              </span>
                             ) : (
                               <span className="pending-text">-</span>
                             )}
@@ -1096,6 +1137,21 @@ const handleStartTournament = async () => {
         isRestarting={restartingTournament}
         result={restartResult}
         recommendation={restartRecommendation}
+      />
+
+      {/* Tournament Delete Modal */}
+      <TournamentDeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeleteResult(null);
+        }}
+        onConfirm={handleDeleteTournament}
+        tournamentName={tournament.name}
+        matchCount={matches.length}
+        participantCount={activeParticipants.length + noShowParticipants.length}
+        isDeleting={deletingTournament}
+        result={deleteResult}
       />
 
       <style>{`
@@ -2187,6 +2243,32 @@ const handleStartTournament = async () => {
         .btn-warning:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .btn-danger {
+          background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+          color: var(--white);
+          display: inline-flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
+          border-radius: var(--radius-md);
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+          background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-danger:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
         }
 
         @media (max-width: 768px) {
