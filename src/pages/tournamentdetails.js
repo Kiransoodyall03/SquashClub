@@ -7,7 +7,7 @@ import {
   Calendar, Clock, Users, Trophy, CheckCircle, XCircle, 
   Edit2, AlertCircle, Play, RefreshCw, Flag, Award,
   Settings, Lock, ShieldAlert, UserPlus, UserMinus,
-  RotateCcw, AlertTriangle, Trash2
+  RotateCcw, AlertTriangle, Trash2, GripVertical
 } from 'lucide-react';
 import { 
   getTournament, joinTournament, leaveTournament, updateMatchScore,
@@ -15,13 +15,15 @@ import {
   updateTournament, completeTournament, getTournamentSummary,
   updateTournamentGroupSettings, approveParticipant, rejectParticipant,
   removePlayerAfterMatchesCreated, restartTournament, shouldRestartTournament,
-  deleteTournament
+  getTournamentGroupWinners,
+  deleteTournament, addGuestPlayer
 } from '../firebase/firestore';
 import { auth } from '../firebase/config';
 import ScoreEntryModal from '../components/scoreEntryModal';
 import PlayerRemovalModal from '../components/PlayerRemovalModal';
 import TournamentRestartModal from '../components/TournamentRestartModal';
 import TournamentDeleteModal from '../components/TournamentDeleteModal';
+import GuestPlayerModal from '../components/GuestPlayerModal';
 
 
 const TournamentDetails = ({ userProfile }) => {
@@ -31,6 +33,7 @@ const TournamentDetails = ({ userProfile }) => {
   const [matches, setMatches] = useState([]);
   const [groups, setGroups] = useState([]);
   const [standings, setStandings] = useState([]);
+  const [groupWinners, setGroupWinners] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isParticipant, setIsParticipant] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -46,6 +49,7 @@ const TournamentDetails = ({ userProfile }) => {
   const [password, setPassword] = useState('');
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [joinError, setJoinError] = useState('');
+  const [draggedItem, setDraggedItem] = useState(null);
   
   // New state for player removal & restart
   const [showRemovalModal, setShowRemovalModal] = useState(false);
@@ -61,7 +65,8 @@ const TournamentDetails = ({ userProfile }) => {
   const [deleteResult, setDeleteResult] = useState(null);
   
   const currentUserId = auth.currentUser?.uid;
-
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [selectedGroupForGuest, setSelectedGroupForGuest] = useState(null);
   useEffect(() => {
     loadTournamentData();
   }, [id]);
@@ -104,25 +109,51 @@ const TournamentDetails = ({ userProfile }) => {
     // Check if current user is the tournament owner/creator
     setIsOwner(tournamentData.createdBy === currentUserId);
     
-    // Generate groups if tournament is not upcoming and has participants
-    if (tournamentData.status !== 'upcoming' && tournamentData.participants?.length > 0) {
-      const activeParticipants = tournamentData.participants.filter(p => p.status !== 'no-show');
-      const generatedGroups = generateTournamentGroups(
-        activeParticipants,
-        tournamentData.groupSize || 4
-      );
-      setGroups(generatedGroups);
-    }
-    
     // Load matches
     const tournamentMatches = await getMatchesByTournament(id);
     setMatches(tournamentMatches);
+
+    // Generate groups if tournament is not upcoming and has participants
+    if (tournamentData.status !== 'upcoming' && tournamentData.participants?.length > 0) {
+      if (tournamentMatches.length > 0) {
+        // Reconstruct groups from matches to ensure consistency with what was generated
+        const groupMap = {};
+        tournamentMatches.forEach(m => {
+           const gName = m.groupName || 'Ungrouped';
+           if (!groupMap[gName]) groupMap[gName] = new Set();
+           groupMap[gName].add(m.player1Id);
+           groupMap[gName].add(m.player2Id);
+        });
+        
+        const participantsMap = {};
+        tournamentData.participants.forEach(p => participantsMap[p.userId] = p);
+        
+        const reconstructedGroups = Object.keys(groupMap).sort().map(gName => {
+           return Array.from(groupMap[gName]).map(uid => participantsMap[uid]).filter(Boolean);
+        });
+        
+        reconstructedGroups.forEach(g => g.sort((a, b) => (b.elo || 1200) - (a.elo || 1200)));
+        setGroups(reconstructedGroups);
+      } else {
+        const activeParticipants = tournamentData.participants.filter(p => p.status !== 'no-show');
+        const generatedGroups = generateTournamentGroups(
+          activeParticipants,
+          tournamentData.groupSize || 4
+        );
+        setGroups(generatedGroups);
+      }
+    }
     
     // Load standings if tournament is active or completed
     if (tournamentData.status === 'active' || tournamentData.status === 'completed') {
       const summary = await getTournamentSummary(id);
       if (summary) {
         setStandings(summary.standings);
+      }
+      
+      if (tournamentData.status === 'completed') {
+        const winners = await getTournamentGroupWinners(id);
+        setGroupWinners(winners);
       }
     }
     
@@ -268,6 +299,72 @@ const TournamentDetails = ({ userProfile }) => {
     }
   };
 
+  // Drag and Drop Handlers
+  const handleDragStart = (e, player, groupIndex) => {
+    setDraggedItem({ player, groupIndex });
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, targetGroupIndex) => {
+    e.preventDefault();
+    
+    if (!draggedItem) return;
+    
+    const { player, groupIndex: sourceGroupIndex } = draggedItem;
+    
+    if (sourceGroupIndex === targetGroupIndex) {
+      setDraggedItem(null);
+      return;
+    }
+
+    const newGroups = [...groups];
+    
+    // Remove from source
+    newGroups[sourceGroupIndex] = newGroups[sourceGroupIndex].filter(p => p.userId !== player.userId);
+    
+    // Add to target
+    newGroups[targetGroupIndex] = [...newGroups[targetGroupIndex], player];
+    
+    // Sort target group by ELO
+    newGroups[targetGroupIndex].sort((a, b) => (b.elo || 1200) - (a.elo || 1200));
+    
+    setGroups(newGroups);
+    setDraggedItem(null);
+  };
+
+  // Add Guest Handler
+  const handleAddGuest = (groupIndex, groupName) => {
+    setSelectedGroupForGuest({ index: groupIndex, name: groupName });
+    setShowGuestModal(true);
+  };
+  const confirmAddGuest = async (guestName) => {
+  if (!selectedGroupForGuest) return;
+  
+  const result = await addGuestPlayer(id, guestName);
+  if (result.success) {
+    // Update local state to reflect change immediately
+    const newParticipant = result.participant;
+    
+    // Update groups
+    const newGroups = [...groups];
+    if (!newGroups[selectedGroupForGuest.index]) {
+      newGroups[selectedGroupForGuest.index] = [];
+    }
+    newGroups[selectedGroupForGuest.index].push(newParticipant);
+    setGroups(newGroups);
+    
+    setShowGuestModal(false);
+    setSelectedGroupForGuest(null);
+  } else {
+    alert("Failed to add guest: " + result.error);
+  }
+};
+
   // Start tournament manually (owner only)
 const handleStartTournament = async () => {
   if (!isOwner || activeParticipants.length < 2) return;
@@ -277,8 +374,11 @@ const handleStartTournament = async () => {
   try {
     const now = new Date();
     
-    // Format date as YYYY-MM-DD
-    const currentDate = now.toISOString().split('T')[0];
+    // Format date as YYYY-MM-DD using local time
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
     
     // Format time as HH:MM
     const currentTime = now.toTimeString().slice(0, 5);
@@ -303,20 +403,17 @@ const handleStartTournament = async () => {
     setGeneratingMatches(true);
     
     try {
-      // Use the activeParticipants that's already defined
-      const generatedGroups = generateTournamentGroups(
-        activeParticipants,
-        tournament.groupSize || 4
-      );
+      // Use current groups state (which might have been manually rearranged)
+      const groupsToUse = groups;
       
-      for (let i = 0; i < generatedGroups.length; i++) {
+      for (let i = 0; i < groupsToUse.length; i++) {
         const groupName = `Group ${String.fromCharCode(65 + i)}`;
         const specificFormat = getGroupFormat(groupName);
 
         await generateGroupMatches(
           id,
           specificFormat,
-          generatedGroups[i],
+          groupsToUse[i],
           groupName
         );
       }
@@ -726,21 +823,36 @@ const handleStartTournament = async () => {
               <h2>Tournament Results</h2>
             </div>
             
-            <div className="standings-podium">
-              {standings.slice(0, 3).map((player, index) => (
-                <div key={player.userId} className={`podium-place place-${index + 1}`}>
-                  <div className="podium-rank">
-                    {index === 0 && '🥇'}
-                    {index === 1 && '🥈'}
-                    {index === 2 && '🥉'}
+            {groupWinners && Object.keys(groupWinners).length > 0 ? (
+              <div className="group-winners-grid">
+                {Object.entries(groupWinners).sort().map(([groupName, winner]) => (
+                  <div key={groupName} className="group-winner-card">
+                    <div className="winner-crown">👑</div>
+                    <div className="winner-group">{groupName} Winner</div>
+                    <div className="winner-name">{winner.name}</div>
+                    <div className="winner-stats">
+                      {winner.wins} Wins ({winner.pointsDiff > 0 ? '+' : ''}{winner.pointsDiff})
+                    </div>
                   </div>
-                  <div className="podium-name">{player.name}</div>
-                  <div className="podium-stats">
-                    {player.matchesWon}W - {player.matchesPlayed - player.matchesWon}L
+                ))}
+              </div>
+            ) : (
+              <div className="standings-podium">
+                {standings.slice(0, 3).map((player, index) => (
+                  <div key={player.userId} className={`podium-place place-${index + 1}`}>
+                    <div className="podium-rank">
+                      {index === 0 && '🥇'}
+                      {index === 1 && '🥈'}
+                      {index === 2 && '🥉'}
+                    </div>
+                    <div className="podium-name">{player.name}</div>
+                    <div className="podium-stats">
+                      {player.matchesWon}W - {player.matchesPlayed - player.matchesWon}L
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="full-standings">
               <h3>Final Standings</h3>
@@ -892,9 +1004,15 @@ const handleStartTournament = async () => {
                 const currentFormat = getGroupFormat(groupName);
                 const isCustom = tournament.groupSettings?.[groupName] != null;
                 const hasMatches = matches.some(m => m.groupName === groupName);
+                const canDrag = isOwner && matches.length === 0;
 
                 return (
-                  <div key={groupIndex} className="group-card card">
+                  <div 
+                    key={groupIndex} 
+                    className={`group-card card ${canDrag && draggedItem && draggedItem.groupIndex !== groupIndex ? 'drop-target' : ''}`}
+                    onDragOver={(e) => canDrag ? handleDragOver(e) : null}
+                    onDrop={(e) => canDrag ? handleDrop(e, groupIndex) : null}
+                  >
                     <div className="group-header">
                       <div className="group-title-stack">
                         <h3>{groupName}</h3>
@@ -907,6 +1025,17 @@ const handleStartTournament = async () => {
                         </span>
                       </div>
                       
+                      {/* Add Guest Button (Owner only, before matches) */}
+                      {isOwner && matches.length === 0 && (
+                        <button 
+                          className="btn-icon btn-add-guest"
+                          onClick={() => handleAddGuest(groupIndex, groupName)}
+                          title="Add Guest Player"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                        </button>
+                      )}
+
                       {/* SETTINGS ICON (Only for Owner) */}
                       {isOwner && !hasMatches && (
                         <div className="settings-wrapper">
@@ -960,9 +1089,14 @@ const handleStartTournament = async () => {
                       {group.map((player, playerIndex) => (
                         <div 
                           key={player.userId} 
-                          className={`group-player ${player.userId === currentUserId ? 'is-me' : ''}`}
+                          className={`group-player ${player.userId === currentUserId ? 'is-me' : ''} ${canDrag ? 'draggable' : ''}`}
+                          draggable={canDrag}
+                          onDragStart={(e) => canDrag ? handleDragStart(e, player, groupIndex) : null}
                         >
-                          <span className="player-seed">{playerIndex + 1}</span>
+                          <div className="player-left">
+                            {canDrag && <GripVertical className="w-4 h-4 text-gray-400 mr-2 cursor-grab" />}
+                            <span className="player-seed">{playerIndex + 1}</span>
+                          </div>
                           <span className="player-name">{player.name}</span>
                           <span className="player-elo">{player.elo}</span>
                         </div>
@@ -1137,6 +1271,17 @@ const handleStartTournament = async () => {
         isRestarting={restartingTournament}
         result={restartResult}
         recommendation={restartRecommendation}
+      />
+      
+      {/* Guest Player Modal */}
+      <GuestPlayerModal
+        isOpen={showGuestModal}
+        onClose={() => {
+          setShowGuestModal(false);
+          setSelectedGroupForGuest(null);
+        }}
+        onConfirm={confirmAddGuest}
+        groupName={selectedGroupForGuest?.name || ''}
       />
 
       {/* Tournament Delete Modal */}
@@ -1368,6 +1513,16 @@ const handleStartTournament = async () => {
       .btn-icon.settings-btn.active {
         background: var(--light-gray);
         color: var(--primary);
+      }
+
+      .btn-icon.btn-add-guest {
+        background: rgba(33, 150, 243, 0.1);
+        color: #2196F3;
+        margin-right: var(--spacing-sm);
+      }
+
+      .btn-icon.btn-add-guest:hover {
+        background: rgba(33, 150, 243, 0.2);
       }
 
       /* Popover Styles */
@@ -1679,6 +1834,53 @@ const handleStartTournament = async () => {
         color: rgba(255, 255, 255, 0.9);
       }
 
+      .group-winners-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-2xl);
+        padding: var(--spacing-md);
+      }
+
+      .group-winner-card {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-lg);
+        text-align: center;
+        color: white;
+        box-shadow: var(--shadow-md);
+        transform: translateY(0);
+        transition: transform 0.2s;
+      }
+
+      .group-winner-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .winner-crown {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .winner-group {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--spacing-xs);
+        opacity: 0.9;
+      }
+
+      .winner-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: var(--spacing-xs);
+      }
+
+      .winner-stats {
+        font-size: 0.875rem;
+        opacity: 0.9;
+      }
+
       .full-standings {
         margin-top: var(--spacing-xl);
       }
@@ -1842,9 +2044,14 @@ const handleStartTournament = async () => {
         gap: var(--spacing-sm);
       }
 
+      .drop-target {
+        border: 2px dashed var(--primary);
+        background: rgba(255, 107, 53, 0.05);
+      }
+
       .group-player {
-        display: grid;
-        grid-template-columns: 30px 1fr auto;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
         gap: var(--spacing-md);
         padding: var(--spacing-sm);
@@ -1852,9 +2059,23 @@ const handleStartTournament = async () => {
         border-radius: var(--radius-sm);
       }
 
+      .group-player.draggable {
+        cursor: grab;
+      }
+
+      .group-player.draggable:active {
+        cursor: grabbing;
+      }
+
       .group-player.is-me {
         background: rgba(76, 175, 80, 0.15);
         border: 1px solid var(--success);
+      }
+
+      .player-left {
+        display: flex;
+        align-items: center;
+        min-width: 30px;
       }
 
       .player-seed {
@@ -1864,6 +2085,7 @@ const handleStartTournament = async () => {
 
       .player-name {
         font-weight: 500;
+        flex: 1;
       }
 
       .player-elo {

@@ -598,14 +598,15 @@ export const calculateTournamentStatus = (tournament) => {
   const tournamentStart = new Date(tournamentDate);
   tournamentStart.setHours(hours, minutes, 0, 0);
   
-  // Next day at midnight
-  const nextDay = new Date(tournamentDate);
-  nextDay.setDate(nextDay.getDate() + 1);
-  nextDay.setHours(0, 0, 0, 0);
+  // End of the next day (allow tournament to run for up to 48 hours from the date)
+  // This prevents late night tournaments from auto-completing at midnight
+  const tournamentEnd = new Date(tournamentDate);
+  tournamentEnd.setDate(tournamentEnd.getDate() + 2);
+  tournamentEnd.setHours(4, 0, 0, 0); // 4 AM two days later to be safe
   
   if (now < tournamentStart) {
     return 'upcoming';
-  } else if (now >= tournamentStart && now < nextDay) {
+  } else if (now >= tournamentStart && now < tournamentEnd) {
     return 'active';
   } else {
     return 'completed';
@@ -1064,6 +1065,35 @@ export const calculateEloChange = (playerElo, opponentElo, playerWon, matchesPla
   
   return eloChange;
 };
+
+export const addGuestPlayer = async (tournamentId, guestName) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    // Create a unique ID for the guest
+    const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const participant = {
+      userId: guestId,
+      name: `${guestName} (Guest)`,
+      elo: 1200,
+      isGuest: true,
+      joinedAt: new Date().toISOString(),
+      status: 'confirmed'
+    };
+
+    await updateDoc(tournamentRef, {
+      participants: arrayUnion(participant),
+      updatedAt: serverTimestamp()
+    });
+    
+    console.log('Guest added:', guestId);
+    return { success: true, participant };
+  } catch (error) {
+    console.error('Error adding guest:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // ============================================
 // COMPLETE TOURNAMENT - FIXED VERSION
 // ============================================
@@ -1104,6 +1134,74 @@ export const completeTournament = async (tournamentId) => {
       };
     }
     
+    // Calculate Group Winners
+    const groupStats = {};
+    
+    matches.forEach(match => {
+      if (match.status !== 'completed') return;
+      const groupName = match.groupName || 'Main Group';
+      
+      if (!groupStats[groupName]) groupStats[groupName] = {};
+      
+      const p1 = match.player1Id;
+      const p2 = match.player2Id;
+      
+      // Initialize stats if needed
+      if (!groupStats[groupName][p1]) groupStats[groupName][p1] = { id: p1, name: match.player1Name, wins: 0, pointsDiff: 0 };
+      if (!groupStats[groupName][p2]) groupStats[groupName][p2] = { id: p2, name: match.player2Name, wins: 0, pointsDiff: 0 };
+      
+      // Calculate points and games to determine winner
+      let p1Score = 0;
+      let p2Score = 0;
+      let p1Games = 0;
+      let p2Games = 0;
+
+      match.scores?.forEach(score => {
+        const s1 = parseInt(score.player1 || 0);
+        const s2 = parseInt(score.player2 || 0);
+        p1Score += s1;
+        p2Score += s2;
+        if (s1 > s2) p1Games++;
+        else if (s2 > s1) p2Games++;
+      });
+
+      // Determine winner for group stats
+      // If games are tied (e.g. 1-1), use total points to decide
+      let effectiveWinner = match.winner;
+      
+      if (p1Games === p2Games) {
+        if (p1Score > p2Score) effectiveWinner = p1;
+        else if (p2Score > p1Score) effectiveWinner = p2;
+      }
+
+      // Update wins
+      if (effectiveWinner === p1) groupStats[groupName][p1].wins++;
+      else if (effectiveWinner === p2) groupStats[groupName][p2].wins++;
+      
+      // Update point diff
+      groupStats[groupName][p1].pointsDiff += (p1Score - p2Score);
+      groupStats[groupName][p2].pointsDiff += (p2Score - p1Score);
+    });
+
+    const groupWinners = {};
+    Object.keys(groupStats).forEach(groupName => {
+      const players = Object.values(groupStats[groupName]);
+      if (players.length > 0) {
+        // Sort by wins desc, then point diff desc
+        players.sort((a, b) => {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return b.pointsDiff - a.pointsDiff;
+        });
+        groupWinners[groupName] = players[0];
+      }
+    });
+
+    // Identify guest players to exclude from ELO updates
+    const guestIds = new Set();
+    tournament.participants?.forEach(p => {
+      if (p.isGuest) guestIds.add(p.userId);
+    });
+
     // Build a map of player starting ELOs from tournament participants
     const playerStartingElos = {};
     tournament.participants?.forEach(p => {
@@ -1150,6 +1248,19 @@ export const completeTournament = async (tournamentId) => {
       const winnerId = match.winner;
       const loserId = winnerId === player1Id ? player2Id : player1Id;
       
+      // If either player is a guest, skip ELO calculation but update match stats
+      if (guestIds.has(player1Id) || guestIds.has(player2Id)) {
+        if (playerMatchStats[winnerId]) {
+          playerMatchStats[winnerId].played += 1;
+          playerMatchStats[winnerId].won += 1;
+        }
+        if (playerMatchStats[loserId]) {
+          playerMatchStats[loserId].played += 1;
+        }
+        console.log(`Skipping ELO for match ${match.id} (guest involved)`);
+        return;
+      }
+
       // Get starting ELOs (use tournament registration ELO for fairness)
       const player1Elo = playerStartingElos[player1Id] || 1200;
       const player2Elo = playerStartingElos[player2Id] || 1200;
@@ -1191,6 +1302,8 @@ export const completeTournament = async (tournamentId) => {
     const updatePromises = [];
     
     for (const [userId, eloChange] of Object.entries(playerEloChanges)) {
+      if (guestIds.has(userId)) continue; // Skip updating user profiles for guests
+
       const stats = playerMatchStats[userId];
       const userRef = doc(db, 'users', userId);
       
@@ -1219,6 +1332,7 @@ export const completeTournament = async (tournamentId) => {
       completedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       eloChanges: playerEloChanges, // Store for reference
+      groupWinners: groupWinners,
       finalStandings: Object.entries(playerMatchStats)
         .map(([id, stats]) => ({ 
           id, 
@@ -1401,7 +1515,8 @@ export const getTournamentSummary = async (tournamentId) => {
     const standings = Object.values(playerStats)
       .map(stats => ({
         ...stats,
-        pointDifference: stats.pointsScored - stats.pointsConceded
+        pointDifference: stats.pointsScored - stats.pointsConceded,
+        eloChange: tournament.eloChanges ? (tournament.eloChanges[stats.userId] || 0) : 0
       }))
       .sort((a, b) => {
         if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon;
@@ -1417,6 +1532,21 @@ export const getTournamentSummary = async (tournamentId) => {
     };
   } catch (error) {
     console.error('Error getting tournament summary:', error);
+    return null;
+  }
+};
+
+export const getTournamentGroupWinners = async (tournamentId) => {
+  try {
+    const tournamentRef = doc(db, 'tournaments', tournamentId);
+    const tournamentSnap = await getDoc(tournamentRef);
+    
+    if (tournamentSnap.exists()) {
+      return tournamentSnap.data().groupWinners || null;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting tournament group winners:', error);
     return null;
   }
 };

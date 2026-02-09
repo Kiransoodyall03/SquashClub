@@ -85,7 +85,9 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
   // Recalculate winner whenever scores change
   useEffect(() => {
     const calculatedWinner = calculateWinner(scores);
-    setWinner(calculatedWinner);
+    if (calculatedWinner) {
+      setWinner(calculatedWinner);
+    }
   }, [scores]);
 
   // Prevent body scroll when modal is open
@@ -112,7 +114,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
       if (formatConfig.games === 1) {
         const p1 = parseInt(validScores[0].player1);
         const p2 = parseInt(validScores[0].player2);
-        if (p1 === p2) return null; // Draw not allowed in 1 game usually
+        if (p1 === p2) return 'draw';
         return p1 > p2 ? match.player1Id : match.player2Id;
       } else {
         // Aggregate score for multi-game fixed (e.g. 2 games to 15)
@@ -124,7 +126,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
           p2Total += parseInt(score.player2);
         });
         
-        if (p1Total === p2Total) return null; // Handle draw logic if needed
+        if (p1Total === p2Total) return 'draw';
         return p1Total > p2Total ? match.player1Id : match.player2Id;
       }
     } else {
@@ -142,6 +144,9 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
       if (p1Wins >= formatConfig.gamesToWin) return match.player1Id;
       if (p2Wins >= formatConfig.gamesToWin) return match.player2Id;
       
+      // If all games played and tied
+      if (validScores.length === formatConfig.games && p1Wins === p2Wins) return 'draw';
+
       return null;
     }
   };
@@ -201,14 +206,8 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
 
   // Check if form is valid
   const isFormValid = () => {
-    if (formatConfig.type === 'fixed') {
-      const allFilled = scores.length === formatConfig.games && 
-                       scores.every(s => s.player1 !== '' && s.player2 !== '');
-      return allFilled && winner !== null;
-    } else {
-      // For best of, we need a winner determined
-      return winner !== null;
-    }
+    const hasValidScore = scores.some(s => s.player1 !== '' && s.player2 !== '');
+    return hasValidScore && winner !== null;
   };
 
   // Handle submit
@@ -395,6 +394,77 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
               )}
             </div>
 
+            {/* Manual Result Selection */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ 
+                display: 'block', 
+                fontSize: '0.75rem', 
+                fontWeight: '600', 
+                color: '#6b7280', 
+                marginBottom: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Result Override
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setWinner(match.player1Id)}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: `1px solid ${winner === match.player1Id ? '#2563eb' : '#e5e7eb'}`,
+                    backgroundColor: winner === match.player1Id ? '#eff6ff' : 'white',
+                    color: winner === match.player1Id ? '#1e40af' : '#374151',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {match.player1Name.split(' ')[0]}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinner('draw')}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: `1px solid ${winner === 'draw' ? '#2563eb' : '#e5e7eb'}`,
+                    backgroundColor: winner === 'draw' ? '#eff6ff' : 'white',
+                    color: winner === 'draw' ? '#1e40af' : '#374151',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Draw
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWinner(match.player2Id)}
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    borderRadius: '6px',
+                    border: `1px solid ${winner === match.player2Id ? '#2563eb' : '#e5e7eb'}`,
+                    backgroundColor: winner === match.player2Id ? '#eff6ff' : 'white',
+                    color: winner === match.player2Id ? '#1e40af' : '#374151',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {match.player2Name.split(' ')[0]}
+                </button>
+              </div>
+            </div>
+
             {error && (
               <div style={{
                 backgroundColor: '#fef2f2',
@@ -523,14 +593,29 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
                   gap: '8px',
                   marginTop: '16px'
                 }}>
-                  <Check className="w-5 h-5" style={{ color: '#16a34a' }} />
-                  <span style={{
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    color: '#14532d'
-                  }}>
-                    Winner: {winner === match.player1Id ? match.player1Name : match.player2Name}
-                  </span>
+                  {winner === 'draw' ? (
+                    <>
+                      <span style={{ fontSize: '1.25rem' }}>🤝</span>
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#14532d'
+                      }}>
+                        Match Draw
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5" style={{ color: '#16a34a' }} />
+                      <span style={{
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        color: '#14532d'
+                      }}>
+                        Winner: {winner === match.player1Id ? match.player1Name : match.player2Name}
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
             </div>
