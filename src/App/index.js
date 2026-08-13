@@ -6,7 +6,6 @@ import { getUserProfile } from '../firebase/firestore';
 import { AnimatePresence } from 'framer-motion';
 
 // Pages
-<<<<<<< HEAD:src/App/index.js
 import Landing from '../pages/Landing';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
@@ -14,37 +13,23 @@ import PlayerDashboard from '../pages/PlayerDashboard';
 import OwnerDashboard from '../pages/OwnerDashboard';
 import TournamentDetails from '../pages/TournamentDetails';
 import Tournaments from '../pages/Tournaments';
-import Leaderboard from 'pages/LeaderBoard';
+import Leaderboard from '../pages/LeaderBoard';
 import Profile from '../pages/Profile';
 import JoinTournament from '../pages/JoinTournament';
 import MemberManagement from '../pages/MemberManagement';
 import IndividualMatches from '../pages/IndividualMatches';
 import MatchDetails from '../pages/MatchDetails';
+import Bookings from '../pages/Bookings';
+import MyBookings from '../pages/MyBookings';
+import PlayerStats from '../pages/PlayerStats';
+import CourtManagement from '../pages/CourtManagement';
+import ClubSettings from '../pages/ClubSettings';
+import ClubAnalytics from '../pages/ClubAnalytics';
 
 // Components
 import Navigation from '../components/Navigation';
 import LoadingScreen from '../components/LoadingScreen';
 import CompleteProfile from '../components/CompleteProfile';
-=======
-import Landing from './pages/landing';
-import Login from './pages/login';
-import Register from './pages/register';
-import PlayerDashboard from './pages/playerdashboard';
-import OwnerDashboard from './pages/ownerdashboard';
-import TournamentDetails from './pages/tournamentdetails';
-import Tournaments from './pages/Tournaments';
-import Leaderboard from './pages/Leaderboard';
-import Profile from './pages/profile';
-import JoinTournament from './pages/jointournament';
-import MemberManagement from './pages/MemberManagement';
-import IndividualMatches from './pages/IndividualMatches';
-import MatchDetails from './pages/MatchDetails';
-
-// Components
-import Navigation from './components/Navigation';
-import LoadingScreen from './components/LoadingScreen';
-import CompleteProfile from './components/CompleteProfile';
->>>>>>> BetterTournament:src/App.js
 
 import './App.css';
 
@@ -70,7 +55,7 @@ function App() {
         if (profile) {
           // Check if user is disabled
           if (profile.disabled) {
-            console.log('⛔ User account is disabled');
+            console.log(' User account is disabled');
             // Sign out disabled users
             await auth.signOut();
             setUser(null);
@@ -82,12 +67,12 @@ function App() {
           }
           
           // User has a complete profile - normal flow
-          console.log('✅ Profile exists - setting normal state');
+          console.log(' Profile exists - setting normal state');
           setUserProfile(profile);
           setNeedsProfileCompletion(false);
         } else {
           // User is authenticated but has no Firestore profile
-          console.log('⚠️ No profile found - checking auth provider');
+          console.log(' No profile found - checking auth provider');
           
           // Check if this is a Google user (they need to complete profile)
           const isGoogleUser = authUser.providerData?.some(
@@ -98,24 +83,24 @@ function App() {
           
           if (isGoogleUser) {
             // Google user without profile - needs to complete registration
-            console.log('🔄 Google user needs profile completion');
+            console.log(' Google user needs profile completion');
             setUserProfile(null);
             setNeedsProfileCompletion(true);
           } else {
             // Email/password user - profile should exist
-            console.log('📧 Email user - waiting for profile...');
+            console.log(' Email user - waiting for profile...');
             
             // Wait a moment and retry once
             await new Promise(resolve => setTimeout(resolve, 1500));
             const retryProfile = await getUserProfile(authUser.uid);
             
             if (retryProfile) {
-              console.log('✅ Profile found on retry');
+              console.log(' Profile found on retry');
               setUserProfile(retryProfile);
               setNeedsProfileCompletion(false);
             } else {
               // Still no profile - something went wrong during registration
-              console.log('❌ Still no profile after retry - showing completion');
+              console.log(' Still no profile after retry - showing completion');
               setUserProfile(null);
               setNeedsProfileCompletion(true);
             }
@@ -242,6 +227,45 @@ function App() {
           <Route 
             path="/profile" 
             element={user ? <Profile user={user} userProfile={userProfile} /> : <Navigate to="/login" />} 
+          />
+
+          {/* Court bookings - members and owner share the grid */}
+          <Route
+            path="/bookings"
+            element={user ? <Bookings userProfile={userProfile} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/my-bookings"
+            element={user ? <MyBookings /> : <Navigate to="/login" />}
+          />
+
+          {/* A member's own analytics */}
+          <Route
+            path="/stats"
+            element={user ? <PlayerStats userProfile={userProfile} /> : <Navigate to="/login" />}
+          />
+
+          {/* Owner-only administration */}
+          <Route
+            path="/courts"
+            element={user && userProfile?.role === 'owner' ? <CourtManagement /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/settings"
+            element={user && userProfile?.role === 'owner' ? <ClubSettings /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/analytics"
+            element={user && userProfile?.role === 'owner' ? <ClubAnalytics /> : <Navigate to="/dashboard" />}
+          />
+
+          {/* The owner dashboard linked to /players before this route existed. */}
+          <Route path="/players" element={<Navigate to="/members" replace />} />
+
+          {/* Catch-all. Previously an unknown path rendered a blank page. */}
+          <Route
+            path="*"
+            element={<Navigate to={user ? '/dashboard' : '/'} replace />}
           />
         </Routes>
       </div>

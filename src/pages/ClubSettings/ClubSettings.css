@@ -1,0 +1,59 @@
+/* Club settings. Layout only — components come from App.css. */
+
+.club-settings .peak-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+  border-bottom: var(--border);
+}
+
+.club-settings .peak-row:last-child { border-bottom: 0; }
+
+.club-settings .peak-row__days {
+  display: flex;
+  gap: 0;
+}
+
+/* Weekday toggles are a segmented control: square, adjoining, one shared rule
+   between them so they read as a single unit rather than seven buttons. */
+.club-settings .peak-day {
+  min-width: 38px;
+  padding: var(--space-1) var(--space-2);
+  border: var(--border-strong);
+  border-right-width: 0;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.club-settings .peak-day:last-child { border-right-width: var(--border-width); }
+.club-settings .peak-day:hover { background: var(--color-surface-sunken); }
+
+.club-settings .peak-day--on {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-brand-on);
+}
+
+.club-settings .peak-row__times {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.club-settings .peak-row__times .form-input {
+  width: auto;
+  min-width: 110px;
+}
+
+@media (max-width: 640px) {
+  .club-settings .peak-row__days { flex-wrap: wrap; }
+  .club-settings .peak-day { border-right-width: var(--border-width); }
+}

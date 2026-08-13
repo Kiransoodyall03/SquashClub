@@ -1,0 +1,85 @@
+/* =========================================================================
+   Club analytics. Charts are CSS bars and a CSS-grid heatmap — no charting
+   library, no gradients, single-hue intensity only.
+   ========================================================================= */
+
+.club-analytics .section { margin-top: var(--space-5); }
+.club-analytics .grid { margin-top: var(--space-5); }
+
+/* ----------------------------------------------------------- bar column */
+
+.club-analytics .bar-col {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 140px;
+}
+
+.club-analytics .bar-col__track {
+  flex: 1;
+  height: 10px;
+  background: var(--color-border);
+  min-width: 60px;
+}
+
+.club-analytics .bar-col__fill {
+  height: 100%;
+  background: var(--color-brand);
+}
+
+.club-analytics .bar-col__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* -------------------------------------------------------------- heatmap */
+
+/*
+ * Weekday rows x hour columns. Column count is data-driven, so the grid is
+ * declared with auto columns and the whole block scrolls rather than
+ * compressing cells below a legible size.
+ */
+.club-analytics .heatmap {
+  display: grid;
+  grid-template-columns: auto repeat(auto-fit, minmax(22px, 1fr));
+  grid-auto-flow: row;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.club-analytics .heatmap__corner {
+  /* Spacer above the weekday labels. */
+  min-width: 34px;
+}
+
+.club-analytics .heatmap__hour,
+.club-analytics .heatmap__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xs);
+  color: var(--color-ink-subtle);
+}
+
+.club-analytics .heatmap__day {
+  justify-content: flex-start;
+  min-width: 34px;
+  padding-right: var(--space-2);
+}
+
+.club-analytics .heatmap__cell {
+  aspect-ratio: 1 / 1;
+  min-width: 22px;
+  min-height: 22px;
+  background: var(--color-brand);
+  border: var(--border-width) solid var(--color-surface);
+}
+
+@media (max-width: 640px) {
+  .club-analytics .heatmap { grid-template-columns: auto repeat(24, 22px); }
+  .club-analytics .bar-col { min-width: 100px; }
+}

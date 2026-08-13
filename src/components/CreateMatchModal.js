@@ -15,7 +15,8 @@ import {
   Check,
   ChevronDown
 } from 'lucide-react';
-import { getAllUsers, createIndividualMatch } from '../firebase/firestore';
+import { getAllUsers } from '../firebase/firestore';
+import { createMatchChallenge } from '../firebase/callables';
 import { auth } from '../firebase/config';
 
 const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
@@ -166,32 +167,17 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
     setError('');
     
     try {
-      const points = parseInt(format.split(' to ')[1]) || 0;
-
-      const matchData = {
+      // The server builds the teams from IDs and reads live ratings itself.
+      // Sending names and ratings from the browser was how stale snapshots got
+      // baked into matches in the first place.
+      const result = await createMatchChallenge({
         matchType,
         matchMode,
         format,
-        pointsPerGame: points,
-        // Team 1
-        team1: matchType === '1v1' 
-          ? [{ id: currentUserId, name: `${userProfile.firstName} ${userProfile.lastName}`, elo: userProfile.elo }]
-          : [
-              { id: currentUserId, name: `${userProfile.firstName} ${userProfile.lastName}`, elo: userProfile.elo },
-              { id: partner.id, name: `${partner.firstName} ${partner.lastName}`, elo: partner.elo }
-            ],
-        // Team 2
-        team2: matchType === '1v1'
-          ? [{ id: opponent.id, name: `${opponent.firstName} ${opponent.lastName}`, elo: opponent.elo }]
-          : [
-              { id: opponent.id, name: `${opponent.firstName} ${opponent.lastName}`, elo: opponent.elo },
-              { id: opponent2.id, name: `${opponent2.firstName} ${opponent2.lastName}`, elo: opponent2.elo }
-            ],
-        createdBy: currentUserId
-      };
-      
-      const result = await createIndividualMatch(matchData);
-      
+        opponentIds: matchType === '1v1' ? [opponent.id] : [opponent.id, opponent2.id],
+        partnerId: matchType === '2v2' ? partner.id : null,
+      });
+
       if (result.success) {
         onMatchCreated && onMatchCreated(result.matchId);
         onClose();
@@ -236,7 +222,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           <div className="modal-header">
             <div className="modal-title">
               <Trophy className="w-6 h-6" />
-              <h2>Create Match</h2>
+              <h2>Send challenge</h2>
             </div>
             <button className="close-btn" onClick={onClose}>
               <X className="w-6 h-6" />
@@ -336,7 +322,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
               {/* Match Summary */}
               <div className="match-summary">
                 <Target className="w-5 h-5" />
-                <span>{matchType} {matchMode} match • {format}</span>
+                <span>{matchType} {matchMode} match - {format}</span>
               </div>
 
               <div className="modal-footer">
@@ -620,7 +606,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
                   ) : (
                     <>
                       <Trophy className="w-5 h-5" />
-                      Create Match
+                      Send challenge
                     </>
                   )}
                 </button>
@@ -647,7 +633,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
 
         .create-match-modal {
           background: var(--white);
-          border-radius: var(--radius-lg);
+          border-radius: 0;
           width: 100%;
           max-width: 550px;
           max-height: 90vh;
@@ -684,7 +670,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           cursor: pointer;
           color: var(--gray);
           padding: var(--spacing-xs);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           transition: all var(--transition-base);
         }
 
@@ -715,7 +701,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
         .step-number {
           width: 28px;
           height: 28px;
-          border-radius: var(--radius-full);
+          border-radius: 0;
           background: var(--light-gray);
           display: flex;
           align-items: center;
@@ -740,17 +726,6 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           background: var(--light-gray);
         }
 
-        .error-message {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-md);
-          background: rgba(244, 67, 54, 0.1);
-          border: 1px solid var(--danger);
-          border-radius: var(--radius-md);
-          color: var(--danger);
-          margin: 0 var(--spacing-lg);
-        }
 
         .modal-body {
           padding: var(--spacing-lg);
@@ -777,7 +752,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           position: relative;
           padding: var(--spacing-lg);
           border: 2px solid var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           cursor: pointer;
           text-align: center;
           transition: all var(--transition-base);
@@ -827,30 +802,9 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           margin-bottom: var(--spacing-lg);
         }
 
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-xs);
-        }
 
-        .form-label {
-          font-weight: 600;
-          font-size: 0.875rem;
-          color: var(--secondary);
-        }
 
-        .form-select {
-          padding: var(--spacing-sm) var(--spacing-md);
-          border: 1px solid var(--light-gray);
-          border-radius: var(--radius-md);
-          font-size: 1rem;
-          cursor: pointer;
-        }
 
-        .form-hint {
-          font-size: 0.75rem;
-          color: var(--gray);
-        }
 
         .match-summary {
           display: flex;
@@ -858,7 +812,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           gap: var(--spacing-sm);
           padding: var(--spacing-md);
           background: rgba(255, 107, 53, 0.1);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           color: var(--primary);
           font-weight: 500;
           margin-bottom: var(--spacing-lg);
@@ -888,7 +842,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
 
         .team-badge {
           padding: var(--spacing-xs) var(--spacing-sm);
-          border-radius: var(--radius-sm);
+          border-radius: 0;
           font-size: 0.625rem;
           font-weight: 700;
           text-transform: uppercase;
@@ -910,7 +864,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           justify-content: space-between;
           padding: var(--spacing-md);
           border: 2px dashed var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           margin-bottom: var(--spacing-sm);
           transition: all var(--transition-base);
         }
@@ -959,7 +913,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           padding: 2px 6px;
           background: var(--success);
           color: var(--white);
-          border-radius: var(--radius-sm);
+          border-radius: 0;
           font-weight: 600;
         }
 
@@ -974,7 +928,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           cursor: pointer;
           color: var(--gray);
           padding: var(--spacing-xs);
-          border-radius: var(--radius-md);
+          border-radius: 0;
         }
 
         .remove-player-btn:hover {
@@ -994,7 +948,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           background: var(--secondary);
           color: var(--white);
           font-weight: 700;
-          border-radius: var(--radius-full);
+          border-radius: 0;
         }
 
         .player-dropdown-wrapper {
@@ -1023,7 +977,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           padding: var(--spacing-md);
           background: var(--white);
           border: 1px solid var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           cursor: pointer;
           transition: all var(--transition-base);
           color: var(--dark-gray);
@@ -1051,8 +1005,8 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           right: 0;
           background: var(--white);
           border: 1px solid var(--light-gray);
-          border-radius: var(--radius-md);
-          box-shadow: var(--shadow-lg);
+          border-radius: 0;
+          box-shadow: none;
           z-index: 20;
           overflow: hidden;
         }
@@ -1121,12 +1075,12 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           gap: var(--spacing-md);
           padding: var(--spacing-md);
           background: rgba(33, 150, 243, 0.1);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           margin-top: var(--spacing-lg);
         }
 
         .elo-preview svg {
-          color: #2196F3;
+          color: var(--color-info);
         }
 
         .elo-preview-content {
@@ -1152,19 +1106,7 @@ const CreateMatchModal = ({ isOpen, onClose, onMatchCreated, userProfile }) => {
           color: var(--danger);
         }
 
-        .loading-spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 3px solid rgba(255, 255, 255, 0.3);
-          border-top-color: var(--white);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
 
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
 
         @media (max-width: 600px) {
           .form-row {

@@ -18,11 +18,12 @@ import {
   Calendar,
   Flag
 } from 'lucide-react';
-import { 
-  getIndividualMatch, 
-  completeIndividualMatch,
-  cancelIndividualMatch
-} from '../../firebase/firestore';
+import { getIndividualMatch } from '../../firebase/firestore';
+import {
+  respondToChallenge, submitMatchResult, confirmMatchResult,
+  disputeMatchResult, cancelMatch,
+} from '../../firebase/callables';
+import { MATCH_STATUS, MATCH_STATUS_LABELS, MATCH_STATUS_TONE } from '../../lib/constants';
 import { auth } from '../../firebase/config';
 import './MatchDetails.css';
 
@@ -124,10 +125,55 @@ const MatchDetails = ({ userProfile }) => {
     return match?.team1?.some(p => p.id === currentUserId);
   };
 
+  /*
+   * A score may only be entered once every named player has accepted. That is
+   * the whole point of the confirmation flow: previously anyone could create a
+   * ranked match naming you and settle it alone.
+   */
   const canEditScore = () => {
     if (!match) return false;
-    if (match.status === 'completed' || match.status === 'cancelled') return false;
+    const open = [MATCH_STATUS.SCHEDULED, MATCH_STATUS.AWAITING_RESULT, 'in-progress'];
+    if (!open.includes(match.status)) return false;
     return isUserInMatch() || userProfile?.role === 'owner';
+  };
+
+  /* This member has been challenged and has not answered yet. */
+  const needsMyAcceptance = () =>
+    match?.status === MATCH_STATUS.PENDING_ACCEPTANCE &&
+    (match.acceptances || {})[currentUserId] === 'pending';
+
+  /* Someone submitted a score and this member has to agree or dispute it. */
+  const needsMyConfirmation = () =>
+    match?.status === MATCH_STATUS.AWAITING_CONFIRM &&
+    (match.confirmations || {})[currentUserId] === 'pending';
+
+  const handleRespond = async (accept) => {
+    setError('');
+    setSubmitting(true);
+    const result = await respondToChallenge({ matchId: id, accept });
+    setSubmitting(false);
+    if (!result.success) { setError(result.error); return; }
+    await loadMatch();
+  };
+
+  const handleConfirm = async () => {
+    setError('');
+    setSubmitting(true);
+    const result = await confirmMatchResult({ matchId: id });
+    setSubmitting(false);
+    if (!result.success) { setError(result.error); return; }
+    await loadMatch();
+  };
+
+  const handleDispute = async () => {
+    const reason = window.prompt('What is wrong with this result? The club administrator will see this.');
+    if (reason === null) return;
+    setError('');
+    setSubmitting(true);
+    const result = await disputeMatchResult({ matchId: id, reason });
+    setSubmitting(false);
+    if (!result.success) { setError(result.error); return; }
+    await loadMatch();
   };
 
   const handleScoreChange = (gameIndex, team, value) => {
@@ -215,11 +261,15 @@ const MatchDetails = ({ userProfile }) => {
     setSubmitting(true);
     
     try {
-      // Filter out games that weren't played
+      // Drop the empty rows the form pre-renders, but keep any genuine 0-x
+      // game: the old filter silently discarded a legitimate whitewash.
       const playedScores = scores.filter(g => g.team1 > 0 || g.team2 > 0);
-      
-      const result = await completeIndividualMatch(id, playedScores, winner);
-      
+
+      // The server re-validates this against the format and rejects anything
+      // that is not a legal squash scoreline, so a client-side check is a
+      // convenience rather than the guarantee.
+      const result = await submitMatchResult({ matchId: id, scores: playedScores });
+
       if (result.success) {
         await loadMatch();
         setShowScoreEntry(false);
@@ -238,12 +288,15 @@ const MatchDetails = ({ userProfile }) => {
     
     setSubmitting(true);
     try {
-      const result = await cancelIndividualMatch(id);
+      const result = await cancelMatch({ matchId: id });
       if (result.success) {
         await loadMatch();
+      } else {
+        // Previously this failed silently and the page simply did not change.
+        setError(result.error);
       }
-    } catch (error) {
-      console.error('Error cancelling match:', error);
+    } catch (err) {
+      setError(err.message);
     }
     setSubmitting(false);
   };
@@ -331,9 +384,12 @@ const MatchDetails = ({ userProfile }) => {
                 <span className="type-badge">{match.matchType}</span>
               </div>
               <span className={`status-badge status-${match.status}`}>
-                {match.status === 'completed' && <CheckCircle className="w-4 h-4" />}
-                {match.status === 'pending' && <Clock className="w-4 h-4" />}
-                {match.status === 'cancelled' && <XCircle className="w-4 h-4" />}
+                {match.status === MATCH_STATUS.COMPLETED && <CheckCircle className="w-4 h-4" />}
+                {[MATCH_STATUS.PENDING_ACCEPTANCE, MATCH_STATUS.AWAITING_CONFIRM,
+                  MATCH_STATUS.AWAITING_RESULT, 'pending'].includes(match.status)
+                  && <Clock className="w-4 h-4" />}
+                {[MATCH_STATUS.CANCELLED, MATCH_STATUS.DECLINED, MATCH_STATUS.DISPUTED]
+                  .includes(match.status) && <XCircle className="w-4 h-4" />}
                 {match.status}
               </span>
             </div>
@@ -566,6 +622,113 @@ const MatchDetails = ({ userProfile }) => {
                 <XCircle className="w-5 h-5" />
                 Cancel Match
               </button>
+            </div>
+          )}
+
+          {/* ---------------------------------------------------------------
+              Two-sided confirmation.
+
+              These two panels are the fix for the single worst flaw in the
+              original app: a player could be named in a ranked match without
+              their knowledge and have their rating moved by a score they never
+              agreed to. Nothing settles now without the other side acting, or
+              the auto-confirm window elapsing.
+             --------------------------------------------------------------- */}
+
+          {needsMyAcceptance() && (
+            <div className="card confirm-panel">
+              <div className="card-header">
+                <h2 className="card__title">You have been challenged</h2>
+              </div>
+              <div className="card-body">
+                <p className="text-sm">
+                  {match.createdByName || 'A member'} has challenged you to a{' '}
+                  {match.matchMode === 'ranked' ? 'ranked' : 'casual'} match
+                  ({match.format}).
+                  {match.matchMode === 'ranked'
+                    && ' Accepting means the result will affect your rating.'}
+                </p>
+                <div className="confirm-panel__actions">
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleRespond(true)}
+                    disabled={submitting}
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Accept challenge
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={() => handleRespond(false)}
+                    disabled={submitting}
+                  >
+                    <XCircle className="w-5 h-5" />
+                    Decline
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {needsMyConfirmation() && (
+            <div className="card confirm-panel">
+              <div className="card-header">
+                <h2 className="card__title">Confirm this result</h2>
+              </div>
+              <div className="card-body">
+                <p className="text-sm">
+                  {match.resultSubmittedByName || 'Your opponent'} recorded this score.
+                  Confirm it to finalise the match
+                  {match.matchMode === 'ranked' ? ' and apply the rating change' : ''}, or
+                  dispute it if it is wrong.
+                </p>
+                <p className="text-xs text-muted">
+                  If nobody responds, the result is confirmed automatically after the
+                  club's review window.
+                </p>
+                <div className="confirm-panel__actions">
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleConfirm}
+                    disabled={submitting}
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Confirm result
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={handleDispute}
+                    disabled={submitting}
+                  >
+                    <AlertCircle className="w-5 h-5" />
+                    Dispute
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {match.status === MATCH_STATUS.AWAITING_CONFIRM && !needsMyConfirmation() && (
+            <div className="notice notice--caution">
+              <Clock className="w-4 h-4" />
+              <span>Waiting for the other side to confirm this result.</span>
+            </div>
+          )}
+
+          {match.status === MATCH_STATUS.DISPUTED && (
+            <div className="notice notice--error">
+              <AlertCircle className="w-4 h-4" />
+              <span>
+                This result is disputed{match.disputeReason ? `: "${match.disputeReason}"` : ''}.
+                A club administrator will resolve it. No ratings have changed.
+              </span>
+            </div>
+          )}
+
+          {match.status === MATCH_STATUS.PENDING_ACCEPTANCE && !needsMyAcceptance() && (
+            <div className="notice notice--info">
+              <Clock className="w-4 h-4" />
+              <span>Waiting for the other side to accept the challenge.</span>
             </div>
           )}
 

@@ -20,7 +20,7 @@ import {
   getLeaderboard,
 } from '../../firebase/firestore';
 import { auth } from '../../firebase/config';
-import CreateTournamentModal from 'components/CreateTournamentModal';
+import CreateTournamentModal from '../../components/CreateTournamentModal';
 import './OwnerDashboard.css';
 
 const OwnerDashboard = () => {

@@ -1,0 +1,199 @@
+rules_version = '2';
+
+// =============================================================================
+// Parkview Squash Club — Firestore security rules
+//
+// Governing principle: anything that affects another member's rating, another
+// member's money, or the availability of a shared resource is written ONLY by
+// a Cloud Function. Cloud Functions use the Admin SDK and bypass these rules
+// entirely, so the rules below can deny those writes to every client without
+// breaking the application.
+//
+// That inverts the original design, in which one member's browser wrote
+// directly to another member's user document. No rule set could have secured
+// that arrangement.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ------------------------------------------------------------ helpers */
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+
+    function isOwner() {
+      return signedIn() && userDoc().role == 'owner';
+    }
+
+    function isActive() {
+      return signedIn() && userDoc().disabled != true;
+    }
+
+    // Fields a member may never set on their own profile. Ratings, match
+    // counters and role are all derived or administrative.
+    function protectedUserFields() {
+      return [
+        'role', 'elo', 'matchesPlayed', 'matchesWon', 'tournamentsPlayed',
+        'lastEloChange', 'disabled', 'disabledAt', 'createdAt', 'peakRating',
+        'ratingUpdatedAt'
+      ];
+    }
+
+    function touchesOnly(allowed) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+
+    function changesNoProtectedFields() {
+      return !request.resource.data.diff(resource.data)
+        .affectedKeys().hasAny(protectedUserFields().toSet());
+    }
+
+    /* -------------------------------------------------------------- users */
+
+    match /users/{userId} {
+      // Any signed-in member can read the directory: opponent pickers, the
+      // leaderboard and head-to-head all need it.
+      allow read: if signedIn();
+
+      // A member creates their own profile once, at registration, and cannot
+      // self-assign the owner role or a starting rating other than the default.
+      allow create: if signedIn()
+                    && userId == uid()
+                    && request.resource.data.role == 'player'
+                    && request.resource.data.elo == 1200
+                    && request.resource.data.matchesPlayed == 0
+                    && request.resource.data.matchesWon == 0
+                    && request.resource.data.disabled == false;
+
+      // Members edit their own descriptive fields only.
+      allow update: if signedIn()
+                    && userId == uid()
+                    && changesNoProtectedFields();
+
+      // Owners may suspend or reinstate, and nothing else.
+      allow update: if isOwner()
+                    && touchesOnly(['disabled', 'disabledAt', 'updatedAt']);
+
+      // Role changes, rating writes and deletions are Cloud Functions only.
+      allow delete: if false;
+    }
+
+    /* ------------------------------------------------------------ courts */
+
+    match /courts/{courtId} {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
+
+    match /courtClosures/{closureId} {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
+
+    match /clubSettings/{docId} {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
+
+    /* ---------------------------------------------------------- bookings */
+
+    // Read-only to every client. Creating or cancelling a booking goes through
+    // the createBooking / cancelBooking callables, which run the availability
+    // checks and the uniqueness transaction. A client that could write here
+    // directly could double-book, bypass the rules engine, or book on a closed
+    // court.
+    match /bookings/{bookingId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /waitlist/{entryId} {
+      allow read: if signedIn();
+      // A member may withdraw their own waitlist entry without a round trip.
+      allow delete: if signedIn() && resource.data.memberId == uid();
+      allow create, update: if false;
+    }
+
+    /* ------------------------------------------------------- tournaments */
+
+    match /tournaments/{tournamentId} {
+      allow read: if signedIn();
+      allow create: if isOwner();
+
+      // The owner edits descriptive fields. Status, settlement and the
+      // participant arrays are Cloud Functions only — joining, approving and
+      // completing all have integrity requirements the client cannot enforce.
+      allow update: if isOwner() && touchesOnly([
+        'name', 'description', 'date', 'time', 'format', 'groupSize',
+        'maxParticipants', 'requiresApproval', 'groupSettings', 'updatedAt'
+      ]);
+
+      allow delete: if isOwner() && resource.data.status == 'upcoming';
+    }
+
+    match /matches/{matchId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /individualMatches/{matchId} {
+      allow read: if signedIn();
+      // Challenge, accept, decline, submit, confirm and dispute are all
+      // callables. Ratings depend on these transitions, so none of them may
+      // be client-written.
+      allow write: if false;
+    }
+
+    /* ---------------------------------------------------- rating history */
+
+    match /ratingHistory/{entryId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    /* --------------------------------------------------------- analytics */
+
+    // Nightly rollups. Read by the owner dashboard, written by a scheduled
+    // function.
+    match /analyticsDaily/{dateKey} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    /* ------------------------------------------------------------- audit */
+
+    // Append-only from the server's point of view; entirely opaque to clients
+    // other than the owner, who can read it.
+    match /auditLog/{entryId} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    /* --------------------------------------------------- notifications */
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() && resource.data.recipientId == uid();
+      // Marking as read is the only client-side mutation.
+      allow update: if signedIn()
+                    && resource.data.recipientId == uid()
+                    && touchesOnly(['readAt', 'read']);
+      allow create, delete: if false;
+    }
+
+    /* ------------------------------------------------------ deny by default */
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,33 @@
+/* Member's own bookings. Layout only — components come from App.css. */
+
+.my-bookings .waitlist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.my-bookings .waitlist-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: var(--border);
+  font-size: var(--text-sm);
+}
+
+.my-bookings .waitlist-list__item:last-child {
+  border-bottom: 0;
+}
+
+.my-bookings .waitlist-list__item svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--color-ink-subtle);
+}
+
+@media (max-width: 640px) {
+  /* The table scrolls rather than wrapping: a squashed six-column table is
+     harder to read than a horizontal scroll. */
+  .my-bookings .table { min-width: 640px; }
+}

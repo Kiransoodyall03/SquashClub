@@ -40,6 +40,7 @@ const Leaderboard = ({ userProfile }) => {
 
   const getAgeFromBirthdate = (birthdate) => {
     if (!birthdate) return null;
+    if (typeof birthdate?.toDate === 'function') birthdate = birthdate.toDate();
     const today = new Date();
     const birthDate = new Date(birthdate);
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -57,7 +58,7 @@ const Leaderboard = ({ userProfile }) => {
     }
 
     const filtered = leaderboard.filter(player => {
-      const age = getAgeFromBirthdate(player.birthdate);
+      const age = getAgeFromBirthdate(player.birthDate);
       if (age === null) return false;
 
       switch (ageFilter) {

@@ -33,7 +33,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   background: transparent;
   border: 1px solid var(--light-gray);
-  border-radius: var(--radius-full);
+  border-radius: 0;
   color: var(--dark-gray);
   cursor: pointer;
   transition: all var(--transition-base);
@@ -83,7 +83,7 @@
   justify-content: center;
   background: transparent;
   border: 1px solid var(--light-gray);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   color: var(--dark-gray);
   cursor: pointer;
   transition: all var(--transition-base);
@@ -139,17 +139,8 @@
   border-top: 1px solid var(--light-gray);
 }
 
-.badge-upcoming {
-  background: var(--warning);
-}
 
-.badge-in-progress {
-  background: var(--primary);
-}
 
-.badge-completed {
-  background: var(--success);
-}
 
 .quick-actions-section {
   margin-top: var(--spacing-3xl);
@@ -174,7 +165,7 @@
   padding: var(--spacing-xl);
   background: var(--white);
   border: 2px solid var(--light-gray);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   color: var(--secondary);
   text-decoration: none;
   cursor: pointer;
@@ -184,7 +175,7 @@
 .quick-action-card:hover {
   border-color: var(--primary);
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: none;
 }
 
 .quick-action-card span {

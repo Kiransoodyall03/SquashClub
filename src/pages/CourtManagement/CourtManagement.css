@@ -1,0 +1,226 @@
+/* =========================================================================
+   COURT MANAGEMENT — page layout only.
+
+   Shared components (.btn, .card, .table, .badge, .modal, .form-*) are defined
+   once in src/styles/components.css and src/App/App.css and are not redefined
+   here. Everything below is spacing, grid and page-scoped presentation.
+   ========================================================================= */
+
+.court-mgmt {
+  min-height: calc(100vh - var(--nav-height));
+  padding: var(--space-6) 0 var(--space-8);
+  background: var(--color-page);
+}
+
+.court-mgmt__section {
+  margin-bottom: var(--space-6);
+}
+
+.court-mgmt__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.court-mgmt__meta {
+  font-size: var(--text-xs);
+  color: var(--color-ink-subtle);
+}
+
+/* Hints sit under a control; the base <p> bottom margin would double up on
+   the .form-group margin below them. */
+.court-mgmt__hint {
+  margin: var(--space-1) 0 0;
+}
+
+.court-mgmt__hint--block {
+  margin-bottom: var(--space-3);
+}
+
+.court-mgmt__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-7);
+  border: var(--border);
+  background: var(--color-surface);
+  color: var(--color-ink-subtle);
+  font-size: var(--text-sm);
+}
+
+.court-mgmt__empty-error {
+  text-align: left;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* --------------------------------------------------------------- the table */
+
+/* The owner's job here is comparison across fifteen rows, so the table keeps
+   its columns and scrolls horizontally inside .table-wrap on narrow screens
+   rather than collapsing into cards. */
+.court-mgmt__table {
+  min-width: 860px;
+}
+
+.court-mgmt__table--closures {
+  min-width: 640px;
+}
+
+.court-mgmt__hours {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.court-mgmt__muted {
+  color: var(--color-ink-subtle);
+  font-size: var(--text-xs);
+}
+
+.court-mgmt__attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.court-mgmt__attr {
+  padding: 0 var(--space-2);
+  border: var(--border);
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-muted);
+  font-size: var(--text-2xs);
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ edit modal */
+
+.court-edit__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.court-edit__attrs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.court-edit__attr {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.court-edit__attr input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--color-brand);
+}
+
+.court-edit__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-top: var(--space-2);
+  border-top: var(--border);
+}
+
+.court-edit__days {
+  border: var(--border);
+}
+
+.court-edit__day {
+  padding: var(--space-3);
+  border-bottom: var(--border);
+}
+
+.court-edit__day:last-child {
+  border-bottom: 0;
+}
+
+.court-edit__day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.court-edit__window {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.court-edit__window:last-child {
+  margin-bottom: 0;
+}
+
+/* The shared input is display:block/width:100%; inside a window row it shares
+   the line with its partner and the remove button. */
+.court-edit__time {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.court-edit__time--single {
+  flex: none;
+  max-width: 180px;
+}
+
+.court-edit__sep {
+  font-size: var(--text-xs);
+  color: var(--color-ink-subtle);
+}
+
+.court-edit__closed {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-subtle);
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 640px) {
+  .court-mgmt {
+    padding: var(--space-5) 0 var(--space-7);
+  }
+
+  .court-edit__grid,
+  .court-edit__attrs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .court-edit__toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  /* The spacer is a flex filler; stacked, it would add an empty row. */
+  .court-edit__toolbar .spacer {
+    display: none;
+  }
+
+  .court-mgmt__section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+}

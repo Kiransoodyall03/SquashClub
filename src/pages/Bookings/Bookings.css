@@ -1,0 +1,438 @@
+/* =========================================================================
+   BOOKINGS — page layout only.
+
+   Buttons, cards, stats, badges, tables, modals and notices all come from
+   styles/components.css and the legacy block in App/App.css. Nothing shared is
+   redefined here; every selector below is prefixed `bookings-` so it cannot
+   collide in a codebase with no CSS scoping.
+   ========================================================================= */
+
+.bookings-page {
+  background: var(--color-page);
+}
+
+/* --------------------------------------------------------------- notices */
+/* The alert region collapses to nothing when empty, so it must not reserve
+   space of its own — the child .error-message carries the margin. */
+.bookings-page [role='alert']:empty {
+  display: none;
+}
+
+/* ------------------------------------------------------------ date strip */
+.bookings-datestrip {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.bookings-datestrip__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  flex: 1 1 auto;
+  border: var(--border);
+  background: var(--color-surface);
+}
+
+.bookings-datestrip__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-right: var(--border);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.bookings-datestrip__day:last-child { border-right: 0; }
+.bookings-datestrip__day:hover { background: var(--color-surface-sunken); color: var(--color-ink); }
+
+.bookings-datestrip__day.is-selected {
+  background: var(--color-brand);
+  color: var(--color-brand-on);
+}
+
+.bookings-datestrip__weekday,
+.bookings-datestrip__month {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semi);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.bookings-datestrip__date {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semi);
+  line-height: var(--leading-tight);
+}
+
+.bookings-datestrip__today {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semi);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  border-top: var(--border);
+  padding-top: var(--space-1);
+  width: 100%;
+  text-align: center;
+}
+.bookings-datestrip__day.is-selected .bookings-datestrip__today {
+  border-top-color: var(--color-brand-on);
+}
+
+/* ---------------------------------------------------------------- summary */
+.bookings-stats { margin-bottom: var(--space-4); }
+
+/* ----------------------------------------------------------------- legend */
+.bookings-legend { margin-bottom: var(--space-4); }
+
+.bookings-legend__title {
+  display: block;
+  margin-bottom: var(--space-3);
+}
+
+.bookings-legend__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookings-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.bookings-legend__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-7);
+  height: var(--space-5);
+  border: var(--border);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semi);
+  color: var(--color-ink-subtle);
+}
+.bookings-legend__swatch svg { width: 13px; height: 13px; }
+
+.bookings-legend__swatch--peak {
+  background: var(--color-caution-wash);
+  color: var(--color-caution);
+  border-color: var(--color-caution);
+}
+
+/* ------------------------------------------------------------------- grid */
+.bookings-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7);
+  color: var(--color-ink-subtle);
+  font-size: var(--text-sm);
+  border: var(--border);
+  background: var(--color-surface);
+}
+
+/* Both axes scroll inside this box so the sticky header and sticky time
+   column have a scroll container to stick to. Capped at 70vh so the summary
+   and legend stay on screen while the grid is scrolled. */
+.bookings-gridwrap {
+  overflow: auto;
+  max-height: 70vh;
+}
+
+/* `separate` rather than `collapse`: collapsed borders are owned by the table,
+   not the cell, and disappear underneath position: sticky cells. */
+.bookings-grid {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.bookings-grid th,
+.bookings-grid td {
+  border-right: var(--border);
+  border-bottom: var(--border);
+}
+
+/* Column headers: sticky top. */
+.bookings-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: var(--space-2);
+  background: var(--color-surface-sunken);
+  border-bottom: var(--border-strong);
+  text-align: center;
+}
+
+.bookings-grid__courthead { min-width: var(--space-8); }
+
+.bookings-grid__courtnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semi);
+  color: var(--color-ink);
+}
+
+.bookings-grid__waithead { min-width: calc(var(--space-8) * 2); }
+
+/* The corner cell has to out-stack both axes or the time column slides over it. */
+.bookings-grid__corner {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: var(--space-8);
+  border-right: var(--border-strong);
+}
+
+/* Row headers: sticky left. */
+.bookings-grid__time {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  padding: var(--space-2);
+  background: var(--color-surface-sunken);
+  border-right: var(--border-strong);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.bookings-grid__timevalue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semi);
+  color: var(--color-ink);
+}
+
+.bookings-grid__time.is-peak { background: var(--color-caution-wash); }
+
+.bookings-grid__peakmark {
+  width: 12px;
+  height: 12px;
+  margin-left: var(--space-1);
+  color: var(--color-caution);
+  vertical-align: middle;
+}
+
+/* ------------------------------------------------------------------ cells */
+/* Cells are full-bleed so the button target fills the square; the shared
+   .table padding would leave dead space around every tap area. */
+.bookings-grid .bookings-cell {
+  padding: 0;
+  height: var(--space-7);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.bookings-cell__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  height: var(--space-7);
+  padding: var(--space-1);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+  line-height: var(--leading-tight);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.bookings-cell__icon { width: 14px; height: 14px; }
+
+.bookings-cell__label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--weight-medium);
+}
+
+.bookings-cell__you {
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semi);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+
+.bookings-cell__dash { color: var(--color-ink-subtle); }
+
+.bookings-cell--free {
+  background: var(--color-surface);
+  color: var(--color-border-strong);
+}
+.bookings-cell--free .bookings-cell__btn:hover {
+  background: var(--color-brand-wash);
+  color: var(--color-brand);
+}
+
+.bookings-cell--booked {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink);
+}
+.bookings-cell--booked .bookings-cell__btn:hover { background: var(--color-border); }
+
+/* A 3px rule, not the 1px token: at 1px it is indistinguishable from the grid
+   line it sits next to. The word "You" carries the same meaning for anyone who
+   cannot see the rule. */
+.bookings-cell--booked.is-mine {
+  background: var(--color-brand-wash);
+  border-left: 3px solid var(--color-brand);
+}
+
+.bookings-cell--closed {
+  background: var(--color-surface-sunken);
+  color: var(--color-ink-subtle);
+}
+
+.bookings-cell--past {
+  background: var(--color-page);
+  color: var(--color-ink-subtle);
+}
+
+.bookings-cell--wait { padding: var(--space-1) var(--space-2); }
+.bookings-grid .bookings-cell--wait { padding: var(--space-1) var(--space-2); }
+
+/* ---------------------------------------------------------------- modals */
+.bookings-summary-list { margin-bottom: var(--space-4); }
+
+.bookings-peak-badge { margin-left: var(--space-2); }
+
+.bookings-form { margin: 0; }
+
+.bookings-textarea {
+  min-height: var(--space-8);
+  resize: vertical;
+}
+
+.bookings-search { position: relative; }
+
+.bookings-search__icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--color-ink-subtle);
+  pointer-events: none;
+}
+
+.bookings-search__input { padding-left: var(--space-6); }
+
+.bookings-picker {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  border: var(--border);
+  background: var(--color-surface);
+  max-height: calc(var(--space-8) * 3);
+  overflow-y: auto;
+}
+
+.bookings-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: var(--border);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.bookings-picker li:last-child .bookings-picker__item { border-bottom: 0; }
+.bookings-picker__item:hover { background: var(--color-surface-sunken); }
+.bookings-picker__item svg { width: 14px; height: 14px; flex: none; color: var(--color-ink-subtle); }
+
+.bookings-picker__name { font-weight: var(--weight-medium); }
+
+.bookings-picker__meta {
+  margin-left: auto;
+  color: var(--color-ink-subtle);
+  font-size: var(--text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookings-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookings-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+  border: var(--border);
+  background: var(--color-surface-sunken);
+  font-size: var(--text-sm);
+}
+.bookings-chip .btn-icon { border: 0; border-left: var(--border); }
+
+.bookings-add-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+.bookings-add-row .form-input { flex: 1 1 auto; }
+
+.bookings-confirm { margin-top: var(--space-4); padding-top: var(--space-4); border-top: var(--border); }
+
+/* A spinner inside a button must not inherit the button's text colour rules. */
+.bookings-inline-spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 640px) {
+  .bookings-datestrip__month { display: none; }
+
+  .bookings-datestrip__day { padding: var(--space-2) 0; }
+
+  /* Narrower columns so more of the club fits before the horizontal scroll
+     starts. The time column stays sticky at every width. */
+  .bookings-grid__courthead,
+  .bookings-grid__corner,
+  .bookings-grid__time { min-width: var(--space-7); }
+
+  .bookings-legend__items { gap: var(--space-3); }
+
+  .bookings-gridwrap { max-height: 60vh; }
+}

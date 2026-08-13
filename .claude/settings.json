@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process git,git-lfs,gitk -ErrorAction SilentlyContinue)",
+      "PowerShell(git -C \"C:\\\\Users\\\\humai\\\\SquashClub\" diff --cached --name-only)",
+      "PowerShell(git -C \"C:\\\\Users\\\\humai\\\\SquashClub\" status --short src/styles)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\humai\\SquashClub\\.git"
+    ]
+  }
+}

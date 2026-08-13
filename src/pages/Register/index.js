@@ -30,11 +30,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-<<<<<<< HEAD:src/pages/Register/index.js
-    birthdate: '',
-=======
     birthDate: '',
->>>>>>> BetterTournament:src/pages/register.js
     role: 'player',
     registrationPassword: ''
   });
@@ -47,11 +43,7 @@ const Register = () => {
   const [googleFormData, setGoogleFormData] = useState({
     firstName: '',
     lastName: '',
-<<<<<<< HEAD:src/pages/Register/index.js
-    birthdate: '',
-=======
     birthDate: '',
->>>>>>> BetterTournament:src/pages/register.js
     role: 'player',
     registrationPassword: ''
   });
@@ -104,21 +96,9 @@ const Register = () => {
       return false;
     }
     
-<<<<<<< HEAD:src/pages/Register/index.js
-    const ageValidation = validateAge(formData.birthdate);
+    const ageValidation = validateAge(formData.birthDate);
     if (!ageValidation.valid) {
       setError(ageValidation.message);
-=======
-    if (!formData.birthDate) {
-      setError('Birth date is required');
-      return false;
-    }
-
-    const age = calculateAge(formData.birthDate);
-
-    if (age < 16 || age > 100) {
-      setError('You must be between 16 and 100 years old');
->>>>>>> BetterTournament:src/pages/register.js
       return false;
     }
     
@@ -152,11 +132,7 @@ const Register = () => {
     const profileData = {
       firstName: formData.firstName,
       lastName: formData.lastName,
-<<<<<<< HEAD:src/pages/Register/index.js
-      birthdate: new Date(formData.birthdate),
-=======
       birthDate: formData.birthDate,
->>>>>>> BetterTournament:src/pages/register.js
       role: formData.role
     };
 
@@ -221,19 +197,11 @@ const Register = () => {
       return;
     }
     
-<<<<<<< HEAD:src/pages/Register/index.js
-    // Validate birthdate if provided
-    if (googleFormData.birthdate) {
-      const ageValidation = validateAge(googleFormData.birthdate);
-      if (!ageValidation.valid) {
-        setError(ageValidation.message);
-=======
     // Validate birth date if provided
     if (googleFormData.birthDate) {
-      const age = calculateAge(googleFormData.birthDate);
-      if (age < 16 || age > 100) {
-        setError('You must be between 16 and 100 years old');
->>>>>>> BetterTournament:src/pages/register.js
+      const ageValidation = validateAge(googleFormData.birthDate);
+      if (!ageValidation.valid) {
+        setError(ageValidation.message);
         return;
       }
     }
@@ -244,11 +212,7 @@ const Register = () => {
     const result = await completeGoogleRegistration(googleUser.uid, {
       firstName: googleFormData.firstName,
       lastName: googleFormData.lastName,
-<<<<<<< HEAD:src/pages/Register/index.js
-      birthdate: googleFormData.birthdate ? new Date(googleFormData.birthdate) : null,
-=======
       birthDate: googleFormData.birthDate || null,
->>>>>>> BetterTournament:src/pages/register.js
       role: googleFormData.role
     });
     
@@ -349,24 +313,14 @@ const Register = () => {
 
               <div className="form-row">
                 <div className="form-group">
-<<<<<<< HEAD:src/pages/Register/index.js
-                  <label className="form-label">Birthdate (Optional)</label>
-=======
                   <label className="form-label">Birth Date (Optional)</label>
->>>>>>> BetterTournament:src/pages/register.js
                   <div className="input-wrapper">
                     <Calendar className="input-icon" />
                     <input
                       type="date"
-<<<<<<< HEAD:src/pages/Register/index.js
-                      name="birthdate"
-                      className="form-input with-icon"
-                      value={googleFormData.birthdate}
-=======
                       name="birthDate"
                       className="form-input with-icon"
                       value={googleFormData.birthDate}
->>>>>>> BetterTournament:src/pages/register.js
                       onChange={handleGoogleFormChange}
                       max={new Date().toISOString().split('T')[0]}
                     />
@@ -442,7 +396,7 @@ const Register = () => {
                     setError('');
                   }}
                 >
-                  ← Back to registration options
+                   Back to registration options
                 </button>
               </p>
             </div>
@@ -450,27 +404,12 @@ const Register = () => {
         </motion.div>
 
         <style>{`
-          .auth-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: var(--spacing-xl);
-            background: linear-gradient(135deg, var(--light-gray) 0%, rgba(255, 107, 53, 0.1) 100%);
-          }
 
           .auth-container-large {
             max-width: 550px;
           }
 
-          .auth-card {
-            padding: var(--spacing-2xl);
-          }
 
-          .auth-header {
-            text-align: center;
-            margin-bottom: var(--spacing-2xl);
-          }
 
           .auth-header h2 {
             margin-bottom: var(--spacing-sm);
@@ -489,21 +428,21 @@ const Register = () => {
             padding: var(--spacing-md);
             background: rgba(76, 175, 80, 0.1);
             border: 1px solid var(--success);
-            border-radius: var(--radius-md);
+            border-radius: 0;
             margin-bottom: var(--spacing-lg);
           }
 
           .google-avatar {
             width: 48px;
             height: 48px;
-            border-radius: var(--radius-full);
+            border-radius: 0;
             object-fit: cover;
           }
 
           .google-avatar-placeholder {
             width: 48px;
             height: 48px;
-            border-radius: var(--radius-full);
+            border-radius: 0;
             background: var(--light-gray);
             display: flex;
             align-items: center;
@@ -531,48 +470,11 @@ const Register = () => {
             color: var(--success);
           }
 
-          .error-message {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            padding: var(--spacing-md);
-            background: rgba(244, 67, 54, 0.1);
-            border: 1px solid var(--danger);
-            border-radius: var(--radius-md);
-            color: var(--danger);
-            margin-bottom: var(--spacing-lg);
-          }
 
-          .input-wrapper {
-            position: relative;
-          }
 
-          .input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            color: var(--gray);
-          }
 
-          .form-input.with-icon {
-            padding-left: 3rem;
-          }
 
-          .label-hint {
-            font-weight: 400;
-            color: var(--gray);
-            font-size: 0.75rem;
-            margin-left: var(--spacing-xs);
-          }
 
-          .form-hint {
-            font-size: 0.75rem;
-            color: var(--gray);
-            margin-top: var(--spacing-xs);
-          }
 
           .link-button {
             background: none;
@@ -587,28 +489,9 @@ const Register = () => {
             text-decoration: underline;
           }
 
-          .btn-full {
-            width: 100%;
-          }
 
-          .auth-footer {
-            text-align: center;
-            margin-top: var(--spacing-xl);
-          }
 
-          .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: var(--white);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
 
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
 
           @media (max-width: 600px) {
             .form-row {
@@ -733,24 +616,14 @@ const Register = () => {
 
             <div className="form-row">
               <div className="form-group">
-<<<<<<< HEAD:src/pages/Register/index.js
-                <label className="form-label">Birthdate</label>
-=======
                 <label className="form-label">Birth Date</label>
->>>>>>> BetterTournament:src/pages/register.js
                 <div className="input-wrapper">
                   <Calendar className="input-icon" />
                   <input
                     type="date"
-<<<<<<< HEAD:src/pages/Register/index.js
-                    name="birthdate"
-                    className="form-input with-icon"
-                    value={formData.birthdate}
-=======
                     name="birthDate"
                     className="form-input with-icon"
                     value={formData.birthDate}
->>>>>>> BetterTournament:src/pages/register.js
                     onChange={handleChange}
                     max={new Date().toISOString().split('T')[0]}
                     required

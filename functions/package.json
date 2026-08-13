@@ -1,0 +1,20 @@
+{
+  "name": "parkview-squash-functions",
+  "description": "Server-side logic for the Parkview Squash Club application",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions,firestore",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "seed": "node scripts/seedCourts.js",
+    "test": "node test/engine.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "private": true
+}

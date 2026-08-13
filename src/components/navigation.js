@@ -11,7 +11,11 @@ import {
   BarChart3,
   Swords,
   Users,
-  Shield
+  Shield,
+  CalendarDays,
+  LineChart,
+  LayoutGrid,
+  Settings
 } from 'lucide-react';
 import { logout } from '../firebase/auth';
 
@@ -30,22 +34,26 @@ const Navigation = ({ user, userProfile }) => {
   const isOwner = userProfile?.role === 'owner';
 
   // Base nav items for all users
+  // Courts sits second: booking a court is the most frequent thing a member
+  // does, far more often than they enter a tournament.
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <Home className="w-5 h-5" /> },
-    { path: '/tournaments', label: 'Tournaments', icon: <Trophy className="w-5 h-5" /> },
+    { path: '/bookings', label: 'Courts', icon: <CalendarDays className="w-5 h-5" /> },
     { path: '/matches', label: 'Matches', icon: <Swords className="w-5 h-5" /> },
-    { path: '/leaderboard', label: 'Leaderboard', icon: <BarChart3 className="w-5 h-5" /> },
+    { path: '/tournaments', label: 'Tournaments', icon: <Trophy className="w-5 h-5" /> },
+    { path: '/leaderboard', label: 'Rankings', icon: <BarChart3 className="w-5 h-5" /> },
+    { path: '/stats', label: 'My stats', icon: <LineChart className="w-5 h-5" /> },
     { path: '/profile', label: 'Profile', icon: <User className="w-5 h-5" /> }
   ];
 
-  // Add Members link for owners only
+  // Administration, owners only.
   if (isOwner) {
-    navItems.splice(4, 0, { 
-      path: '/members', 
-      label: 'Members', 
-      icon: <Users className="w-5 h-5" />,
-      ownerOnly: true
-    });
+    navItems.splice(5, 0,
+      { path: '/courts', label: 'Court admin', icon: <LayoutGrid className="w-5 h-5" />, ownerOnly: true },
+      { path: '/members', label: 'Members', icon: <Users className="w-5 h-5" />, ownerOnly: true },
+      { path: '/analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, ownerOnly: true },
+      { path: '/settings', label: 'Settings', icon: <Settings className="w-5 h-5" />, ownerOnly: true }
+    );
   }
 
   return (
@@ -54,7 +62,7 @@ const Navigation = ({ user, userProfile }) => {
         <div className="nav-content">
           <Link to="/dashboard" className="nav-brand">
             <Trophy className="w-6 h-6" />
-            <span>Squash Club</span>
+            <span>Parkview Squash</span>
           </Link>
 
           <div className="nav-menu desktop-menu">
@@ -119,7 +127,7 @@ const Navigation = ({ user, userProfile }) => {
       <style>{`
         .navigation {
           background: var(--white);
-          box-shadow: var(--shadow-sm);
+          box-shadow: none;
           position: sticky;
           top: 0;
           z-index: 100;
@@ -155,7 +163,7 @@ const Navigation = ({ user, userProfile }) => {
           padding: var(--spacing-sm) var(--spacing-md);
           color: var(--dark-gray);
           text-decoration: none;
-          border-radius: var(--radius-md);
+          border-radius: 0;
           transition: all var(--transition-base);
           font-size: 0.9rem;
           position: relative;
@@ -215,7 +223,7 @@ const Navigation = ({ user, userProfile }) => {
           padding: 2px 6px;
           background: var(--gradient-primary);
           color: var(--white);
-          border-radius: var(--radius-sm);
+          border-radius: 0;
           font-weight: 600;
           text-transform: uppercase;
         }
@@ -240,7 +248,7 @@ const Navigation = ({ user, userProfile }) => {
           left: 0;
           right: 0;
           background: var(--white);
-          box-shadow: var(--shadow-md);
+          box-shadow: none;
           padding: var(--spacing-md);
         }
 
@@ -251,7 +259,7 @@ const Navigation = ({ user, userProfile }) => {
           padding: var(--spacing-md);
           color: var(--dark-gray);
           text-decoration: none;
-          border-radius: var(--radius-md);
+          border-radius: 0;
           transition: all var(--transition-base);
         }
 

@@ -252,7 +252,7 @@ const PlayerDashboard = () => {
                   <div className="leaderboard-player">
                     <span className="player-name">{player.name}</span>
                     <span className="player-stats">
-                      {player.matchesPlayed} matches • {player.winRate}% win rate
+                      {player.matchesPlayed} matches - {player.winRate}% win rate
                     </span>
                   </div>
                   <div className="leaderboard-elo">

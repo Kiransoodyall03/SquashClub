@@ -184,7 +184,7 @@ export const completeGoogleRegistration = async (userId, profileData) => {
       return { success: false, error: result.error };
     }
     
-    console.log('✅ createUserProfile succeeded');
+    console.log(' createUserProfile succeeded');
     
     // Wait a moment for Firestore to propagate
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -195,7 +195,7 @@ export const completeGoogleRegistration = async (userId, profileData) => {
     console.log('Fetched profile:', createdProfile);
     
     if (!createdProfile) {
-      console.error('❌ Profile was not created - getUserProfile returned null');
+      console.error(' Profile was not created - getUserProfile returned null');
       throw new Error('Profile creation verification failed');
     }
     

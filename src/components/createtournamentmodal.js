@@ -306,12 +306,12 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
 
         .modal-content {
           background: var(--white);
-          border-radius: var(--radius-lg);
+          border-radius: 0;
           max-width: 600px;
           width: 100%;
           max-height: 90vh;
           overflow-y: auto;
-          box-shadow: var(--shadow-xl);
+          box-shadow: none;
         }
 
         .modal-header {
@@ -332,7 +332,7 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           color: var(--gray);
           cursor: pointer;
           padding: var(--spacing-sm);
-          border-radius: var(--radius-sm);
+          border-radius: 0;
           transition: all var(--transition-base);
         }
 
@@ -345,11 +345,6 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           padding: var(--spacing-xl);
         }
 
-        .form-label {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-xs);
-        }
 
         .form-section-divider {
           margin: var(--spacing-lg) 0 var(--spacing-md);
@@ -389,7 +384,7 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           margin-top: var(--spacing-lg);
           padding: var(--spacing-md);
           border: 1px dashed #fbbf24;
-          border-radius: var(--radius-md);
+          border-radius: 0;
           background: rgba(251, 191, 36, 0.05);
         }
 
@@ -419,14 +414,6 @@ const CreateTournamentModal = ({ onClose, onSubmit }) => {
           margin-top: var(--spacing-xl);
         }
 
-        .error-message {
-          margin: var(--spacing-md) var(--spacing-xl) 0;
-          padding: var(--spacing-md);
-          background: rgba(244, 67, 54, 0.1);
-          border: 1px solid var(--danger);
-          border-radius: var(--radius-md);
-          color: var(--danger);
-        }
 
         @media (max-width: 600px) {
           .form-row {

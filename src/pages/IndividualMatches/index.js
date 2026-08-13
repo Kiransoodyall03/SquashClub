@@ -23,7 +23,8 @@ import {
   getRecentIndividualMatches
 } from '../../firebase/firestore.js';
 import { auth } from '../../firebase/config.js';
-import CreateMatchModal from 'components/CreateMatchModal';
+import CreateMatchModal from '../../components/CreateMatchModal';
+import { MATCH_STATUS, MATCH_STATUS_LABELS, MATCH_STATUS_TONE } from '../../lib/constants';
 
 const IndividualMatches = ({ userProfile }) => {
   const navigate = useNavigate();
@@ -51,7 +52,22 @@ const IndividualMatches = ({ userProfile }) => {
   };
 
   const filteredMatches = matches.filter(match => {
-    const matchesStatus = filter === 'all' || match.status === filter;
+    /*
+     * "Needs you" is the most useful view in the list: it answers the only
+     * question a member actually has when they open this page. It is computed
+     * rather than stored, because whether a match needs YOU depends on who is
+     * looking at it.
+     */
+    const awaitingMe =
+      (match.status === MATCH_STATUS.PENDING_ACCEPTANCE
+        && (match.acceptances || {})[currentUserId] === 'pending')
+      || (match.status === MATCH_STATUS.AWAITING_CONFIRM
+        && (match.confirmations || {})[currentUserId] === 'pending');
+
+    const matchesStatus =
+      filter === 'all' ? true
+        : filter === 'needs_me' ? awaitingMe
+          : match.status === filter;
     const matchesMode = modeFilter === 'all' || match.matchMode === modeFilter;
     return matchesStatus && matchesMode;
   });
@@ -211,8 +227,11 @@ const IndividualMatches = ({ userProfile }) => {
             <div className="filter-tabs">
               {[
                 { key: 'all', label: 'All' },
-                { key: 'pending', label: 'Pending' },
-                { key: 'in-progress', label: 'In Progress' },
+                { key: 'needs_me', label: 'Needs you' },
+                { key: MATCH_STATUS.PENDING_ACCEPTANCE, label: 'Awaiting acceptance' },
+                { key: MATCH_STATUS.SCHEDULED, label: 'Scheduled' },
+                { key: MATCH_STATUS.AWAITING_CONFIRM, label: 'Awaiting confirmation' },
+                { key: MATCH_STATUS.DISPUTED, label: 'Disputed' },
                 { key: 'completed', label: 'Completed' },
                 { key: 'cancelled', label: 'Cancelled' }
               ].map(({ key, label }) => (
@@ -289,7 +308,7 @@ const IndividualMatches = ({ userProfile }) => {
                       </div>
                       <span className={`status-badge ${getStatusClass(match.status)}`}>
                         {getStatusIcon(match.status)}
-                        {match.status}
+                        {MATCH_STATUS_LABELS[match.status] || match.status}
                       </span>
                     </div>
 

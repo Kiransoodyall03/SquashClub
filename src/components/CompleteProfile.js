@@ -74,7 +74,7 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
       console.log('Create profile result:', result);
       
       if (result.success) {
-        console.log('✅ Profile created successfully');
+        console.log(' Profile created successfully');
         // Call the callback to refresh the app state
         if (onProfileComplete) {
           await onProfileComplete();
@@ -264,44 +264,19 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
       </motion.div>
 
       <style>{`
-        .auth-page {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: var(--spacing-xl);
-          background: linear-gradient(135deg, var(--light-gray) 0%, rgba(255, 107, 53, 0.1) 100%);
-        }
 
-        .auth-container {
-          width: 100%;
-          max-width: 450px;
-        }
 
         .auth-container-large {
           max-width: 550px;
         }
 
-        .auth-card {
-          background: var(--white);
-          border-radius: var(--radius-lg);
-          padding: var(--spacing-2xl);
-          box-shadow: var(--shadow-lg);
-        }
 
-        .auth-header {
-          text-align: center;
-          margin-bottom: var(--spacing-xl);
-        }
 
         .auth-header h2 {
           margin-bottom: var(--spacing-sm);
           color: var(--secondary);
         }
 
-        .auth-header p {
-          color: var(--gray);
-        }
 
         .account-banner {
           display: flex;
@@ -309,21 +284,21 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
           gap: var(--spacing-md);
           padding: var(--spacing-md);
           background: var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           margin-bottom: var(--spacing-lg);
         }
 
         .account-avatar {
           width: 48px;
           height: 48px;
-          border-radius: var(--radius-full);
+          border-radius: 0;
           object-fit: cover;
         }
 
         .account-avatar-placeholder {
           width: 48px;
           height: 48px;
-          border-radius: var(--radius-full);
+          border-radius: 0;
           background: var(--gray);
           display: flex;
           align-items: center;
@@ -347,21 +322,7 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
           color: var(--gray);
         }
 
-        .error-message {
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-md);
-          background: rgba(244, 67, 54, 0.1);
-          border: 1px solid var(--danger);
-          border-radius: var(--radius-md);
-          color: var(--danger);
-          margin-bottom: var(--spacing-lg);
-        }
 
-        .auth-form {
-          margin-bottom: var(--spacing-lg);
-        }
 
         .form-row {
           display: grid;
@@ -369,131 +330,25 @@ const CompleteProfile = ({ user, onProfileComplete }) => {
           gap: var(--spacing-md);
         }
 
-        .form-group {
-          margin-bottom: var(--spacing-md);
-        }
 
-        .form-label {
-          display: block;
-          margin-bottom: var(--spacing-xs);
-          font-weight: 500;
-          color: var(--secondary);
-        }
 
-        .input-wrapper {
-          position: relative;
-        }
 
-        .input-icon {
-          position: absolute;
-          left: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 20px;
-          height: 20px;
-          color: var(--gray);
-        }
 
-        .form-input {
-          width: 100%;
-          padding: var(--spacing-md);
-          border: 2px solid var(--light-gray);
-          border-radius: var(--radius-md);
-          font-size: 1rem;
-          transition: border-color var(--transition-base);
-        }
 
-        .form-input:focus {
-          outline: none;
-          border-color: var(--primary);
-        }
 
-        .form-input.with-icon {
-          padding-left: 3rem;
-        }
 
-        .form-select {
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-          background-position: right 0.5rem center;
-          background-repeat: no-repeat;
-          background-size: 1.5em 1.5em;
-          padding-right: 2.5rem;
-        }
 
-        .label-hint {
-          font-weight: 400;
-          color: var(--gray);
-          font-size: 0.75rem;
-          margin-left: var(--spacing-xs);
-        }
 
-        .form-hint {
-          font-size: 0.75rem;
-          color: var(--gray);
-          margin-top: var(--spacing-xs);
-        }
 
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--spacing-sm);
-          padding: var(--spacing-md) var(--spacing-lg);
-          border-radius: var(--radius-md);
-          font-weight: 600;
-          cursor: pointer;
-          transition: all var(--transition-base);
-          border: none;
-        }
 
-        .btn-primary {
-          background: var(--gradient-primary);
-          color: var(--white);
-        }
 
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
-        }
 
-        .btn-outline {
-          background: transparent;
-          border: 2px solid var(--light-gray);
-          color: var(--gray);
-        }
 
-        .btn-outline:hover {
-          border-color: var(--gray);
-          background: var(--light-gray);
-        }
 
-        .btn-full {
-          width: 100%;
-        }
 
-        .btn:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
 
-        .auth-footer {
-          margin-top: var(--spacing-lg);
-        }
 
-        .loading-spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 3px solid rgba(255, 255, 255, 0.3);
-          border-top-color: var(--white);
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
 
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
 
         @media (max-width: 600px) {
           .form-row {

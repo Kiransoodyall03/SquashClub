@@ -1,0 +1,86 @@
+[debug] [2026-08-13T18:03:14.200Z] ----------------------------------------------------------------------
+[debug] [2026-08-13T18:03:14.207Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\humai\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2026-08-13T18:03:14.207Z] CLI Version:   15.25.1
+[debug] [2026-08-13T18:03:14.208Z] Platform:      win32
+[debug] [2026-08-13T18:03:14.208Z] Node Version:  v24.14.0
+[debug] [2026-08-13T18:03:14.208Z] Detected Agent: unknown
+[debug] [2026-08-13T18:03:14.208Z] Time:          Thu Aug 13 2026 20:03:14 GMT+0200 (South Africa Standard Time)
+[debug] [2026-08-13T18:03:14.208Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-13T18:03:15.683Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-08-13T18:03:15.683Z] > authorizing via signed-in user (kiransoodyall03@gmail.com)
+[debug] [2026-08-13T18:03:15.683Z] [iam] checking project squashclub-e8a0c for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-08-13T18:03:15.700Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:15.700Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:15.701Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c:testIamPermissions [none]
+[debug] [2026-08-13T18:03:15.701Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c:testIamPermissions  x-goog-user-project=squashclub-e8a0c
+[debug] [2026-08-13T18:03:15.701Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-13T18:03:17.363Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c:testIamPermissions 200
+[debug] [2026-08-13T18:03:17.363Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-08-13T18:03:17.363Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:17.363Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:17.363Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/squashclub-e8a0c/serviceAccounts/squashclub-e8a0c@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-08-13T18:03:17.363Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/squashclub-e8a0c/serviceAccounts/squashclub-e8a0c@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-08-13T18:03:19.167Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/squashclub-e8a0c/serviceAccounts/squashclub-e8a0c@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-08-13T18:03:19.168Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/squashclub-e8a0c/serviceAccounts/squashclub-e8a0c@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-08-13T18:03:19.169Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:19.170Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:19.170Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/squashclub-e8a0c [none]
+[debug] [2026-08-13T18:03:19.844Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/squashclub-e8a0c 200
+[debug] [2026-08-13T18:03:19.844Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/squashclub-e8a0c {"projectId":"squashclub-e8a0c","projectNumber":"397341468790","displayName":"squashclub","name":"projects/squashclub-e8a0c","resources":{"hostingSite":"squashclub-e8a0c"},"state":"ACTIVE","labels":{"firebase":"enabled"},"etag":"1_5094e4a7-2f2c-43bb-9f92-35daadfe948c"}
+[info] 
+[info] === Deploying to 'squashclub-e8a0c'...
+[info] 
+[info] i  deploying firestore, functions, hosting 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-08-13T18:03:19.862Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:19.863Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:19.863Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/squashclub-e8a0c/databases/(default) [none]
+[debug] [2026-08-13T18:03:20.270Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/squashclub-e8a0c/databases/(default) 200
+[debug] [2026-08-13T18:03:20.270Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/squashclub-e8a0c/databases/(default) {"name":"projects/squashclub-e8a0c/databases/(default)","uid":"c74ae43e-d6f3-48a9-a7fb-3f5e31590a2a","createTime":"2025-11-24T12:08:34.269341Z","updateTime":"2025-11-24T12:08:34.269341Z","locationId":"africa-south1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-08-13T17:03:20.234138Z","appEngineIntegrationMode":"DISABLED","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IKO2lKeYnpYDMNG/tZPo45ID"}
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-08-13T18:03:20.272Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:20.272Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:20.272Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/squashclub-e8a0c:test [none]
+[debug] [2026-08-13T18:03:20.272Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/squashclub-e8a0c:test [omitted]
+[debug] [2026-08-13T18:03:21.652Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/squashclub-e8a0c:test 200
+[debug] [2026-08-13T18:03:21.653Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/squashclub-e8a0c:test {"issues":[{"sourcePosition":{"fileName":"firestore.rules","line":38,"column":14,"currentOffset":1236,"endOffset":1243},"description":"Unused function: isActive.","severity":"WARNING"}]}
+[warn] !  [W] 38:14 - Unused function: isActive. 
+[info] +  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-08-13T18:03:21.659Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:21.659Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:21.659Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c [none]
+[debug] [2026-08-13T18:03:22.367Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c 200
+[debug] [2026-08-13T18:03:22.367Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/squashclub-e8a0c {"projectNumber":"397341468790","projectId":"squashclub-e8a0c","lifecycleState":"ACTIVE","name":"squashclub","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-11-24T12:06:41.154092Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[debug] [2026-08-13T18:03:22.378Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:22.378Z] Checked if tokens are valid: true, expires at: 1786647243618
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-08-13T18:03:22.384Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:22.384Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:22.385Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com [none]
+[debug] [2026-08-13T18:03:22.385Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com  x-goog-user-project=squashclub-e8a0c
+[debug] [2026-08-13T18:03:22.388Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com [none]
+[debug] [2026-08-13T18:03:22.388Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com  x-goog-user-project=squashclub-e8a0c
+[debug] [2026-08-13T18:03:24.204Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com 200
+[debug] [2026-08-13T18:03:24.204Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudbuild.googleapis.com. Enabling now... 
+[debug] [2026-08-13T18:03:24.205Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:24.205Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:24.205Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com:enable [none]
+[debug] [2026-08-13T18:03:24.205Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com:enable  x-goog-user-project=squashclub-e8a0c
+[debug] [2026-08-13T18:03:24.413Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com 200
+[debug] [2026-08-13T18:03:24.414Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com [omitted]
+[warn] !  artifactregistry: missing required API artifactregistry.googleapis.com. Enabling now... 
+[debug] [2026-08-13T18:03:24.414Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:24.414Z] Checked if tokens are valid: true, expires at: 1786647243618
+[debug] [2026-08-13T18:03:24.414Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com:enable [none]
+[debug] [2026-08-13T18:03:24.414Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com:enable  x-goog-user-project=squashclub-e8a0c
+[debug] [2026-08-13T18:03:25.365Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com:enable 200
+[debug] [2026-08-13T18:03:25.365Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/artifactregistry.googleapis.com:enable [omitted]
+[debug] [2026-08-13T18:03:26.401Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com:enable 200
+[debug] [2026-08-13T18:03:26.401Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/squashclub-e8a0c/services/cloudbuild.googleapis.com:enable [omitted]

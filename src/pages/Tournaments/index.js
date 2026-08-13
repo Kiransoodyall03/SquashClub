@@ -200,7 +200,7 @@ const Tournaments = ({ userProfile }) => {
           gap: var(--spacing-sm);
           padding: var(--spacing-sm) var(--spacing-md);
           background: var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
         }
 
         .search-input {
@@ -221,7 +221,7 @@ const Tournaments = ({ userProfile }) => {
           padding: var(--spacing-sm) var(--spacing-md);
           background: transparent;
           border: 1px solid var(--light-gray);
-          border-radius: var(--radius-md);
+          border-radius: 0;
           cursor: pointer;
           transition: all var(--transition-base);
           color: var(--dark-gray);
@@ -251,7 +251,7 @@ const Tournaments = ({ userProfile }) => {
         }
 
         .tournament-card:hover {
-          box-shadow: var(--shadow-lg);
+          box-shadow: none;
         }
 
         .tournament-header {
@@ -268,28 +268,9 @@ const Tournaments = ({ userProfile }) => {
           flex: 1;
         }
 
-        .badge {
-          padding: var(--spacing-xs) var(--spacing-sm);
-          border-radius: var(--radius-sm);
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: uppercase;
-        }
 
-        .badge-upcoming {
-          background: rgba(33, 150, 243, 0.1);
-          color: #2196F3;
-        }
 
-        .badge-active {
-          background: rgba(76, 175, 80, 0.1);
-          color: var(--success);
-        }
 
-        .badge-completed {
-          background: rgba(158, 158, 158, 0.1);
-          color: var(--gray);
-        }
 
         .tournament-details {
           display: flex;

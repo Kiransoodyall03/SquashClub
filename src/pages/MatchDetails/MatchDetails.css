@@ -41,7 +41,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   font-size: 0.875rem;
   font-weight: 600;
 }
@@ -59,7 +59,7 @@
 .type-badge {
   padding: var(--spacing-xs) var(--spacing-sm);
   background: var(--light-gray);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   font-size: 0.875rem;
   color: var(--secondary);
 }
@@ -69,7 +69,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   font-weight: 600;
   text-transform: capitalize;
 }
@@ -81,7 +81,7 @@
 
 .status-pending {
   background: rgba(255, 152, 0, 0.1);
-  color: #FF9800;
+  color: var(--color-caution);
 }
 
 .status-cancelled {
@@ -112,16 +112,16 @@
 
 .team-card {
   background: var(--white);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   padding: var(--spacing-xl);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   position: relative;
   overflow: hidden;
 }
 
 .team-card.winner {
-  border: 2px solid #FFD700;
-  background: linear-gradient(to bottom, rgba(255, 215, 0, 0.1), var(--white));
+  border: 2px solid var(--color-caution);
+  background: var(--white);
 }
 
 .team-card.user-team {
@@ -133,7 +133,7 @@
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: var(--color-caution);
   color: var(--white);
   padding: var(--spacing-xs) var(--spacing-md);
   display: flex;
@@ -165,7 +165,7 @@
   align-items: center;
   padding: var(--spacing-md);
   background: var(--light-gray);
-  border-radius: var(--radius-md);
+  border-radius: 0;
 }
 
 .player-info {
@@ -185,7 +185,7 @@
   padding: 2px 6px;
   background: var(--success);
   color: var(--white);
-  border-radius: var(--radius-sm);
+  border-radius: 0;
   font-weight: 600;
 }
 
@@ -194,18 +194,8 @@
   color: var(--gray);
 }
 
-.elo-change {
-  font-weight: 700;
-  font-size: 1rem;
-}
 
-.elo-change.positive {
-  color: var(--success);
-}
 
-.elo-change.negative {
-  color: var(--danger);
-}
 
 .vs-container {
   display: flex;
@@ -216,7 +206,7 @@
 .vs-badge {
   width: 60px;
   height: 60px;
-  border-radius: var(--radius-full);
+  border-radius: 0;
   background: var(--secondary);
   color: var(--white);
   display: flex;
@@ -250,7 +240,7 @@
   min-width: 100px;
   padding: var(--spacing-md);
   background: var(--light-gray);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   text-align: center;
 }
 
@@ -299,17 +289,6 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.error-message {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background: rgba(244, 67, 54, 0.1);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius-md);
-  color: var(--danger);
-  margin-bottom: var(--spacing-lg);
-}
 
 .score-entry-grid {
   margin-bottom: var(--spacing-lg);
@@ -334,7 +313,7 @@
 .score-input {
   padding: var(--spacing-md);
   border: 1px solid var(--light-gray);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   text-align: center;
   font-size: 1.25rem;
   font-weight: 600;
@@ -365,14 +344,7 @@
   margin-bottom: var(--spacing-xl);
 }
 
-.btn-danger {
-  color: var(--danger);
-  border-color: var(--danger);
-}
 
-.btn-danger:hover {
-  background: rgba(244, 67, 54, 0.1);
-}
 
 .result-banner {
   display: flex;
@@ -380,18 +352,18 @@
   justify-content: center;
   gap: var(--spacing-md);
   padding: var(--spacing-xl);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   text-align: center;
 }
 
 .result-banner.victory {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.1));
+  background: var(--color-surface-sunken);
   border: 2px solid var(--success);
   color: var(--success);
 }
 
 .result-banner.defeat {
-  background: linear-gradient(135deg, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 0.1));
+  background: var(--color-surface-sunken);
   border: 2px solid var(--danger);
   color: var(--danger);
 }
@@ -430,19 +402,7 @@
   animation: spin 0.8s linear infinite;
 }
 
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top-color: var(--white);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 
 @media (max-width: 768px) {
   .teams-section {
@@ -471,4 +431,26 @@
   .score-row {
     grid-template-columns: 80px 1fr 1fr;
   }
+}
+/* ---------------------------------------------------- confirmation panel */
+/*
+ * Shown when this member has to accept a challenge or confirm a result.
+ * Given a strong border because it is the one thing on the page that needs
+ * acting on — everything else is read-only detail.
+ */
+.confirm-panel {
+  margin-bottom: var(--space-5);
+  border-color: var(--color-brand);
+}
+
+.confirm-panel .card-header {
+  background: var(--color-brand-wash);
+  border-bottom-color: var(--color-brand);
+}
+
+.confirm-panel__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
 }

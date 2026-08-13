@@ -384,12 +384,12 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
 
           .score-modal-container {
             background: var(--white, #ffffff);
-            border-radius: 16px;
+            border-radius: 0;
             max-width: 500px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-shadow: none;
           }
 
           .score-modal-header {
@@ -417,7 +417,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             color: var(--gray, #6b7280);
             cursor: pointer;
             padding: 8px;
-            border-radius: 8px;
+            border-radius: 0;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
@@ -436,7 +436,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
           .match-info {
             padding: 16px;
             background: var(--light-gray, #f3f4f6);
-            border-radius: 12px;
+            border-radius: 0;
             margin-bottom: 20px;
             text-align: center;
           }
@@ -473,7 +473,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             padding: 4px 12px;
             background: var(--primary, #3b82f6);
             color: white;
-            border-radius: 20px;
+            border-radius: 0;
             font-size: 0.75rem;
             font-weight: 600;
           }
@@ -491,15 +491,6 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             margin-left: 6px;
           }
 
-          .error-message {
-            padding: 12px 16px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
-            border-radius: 8px;
-            color: #ef4444;
-            margin-bottom: 20px;
-            font-size: 0.875rem;
-          }
 
           .score-form {
             display: flex;
@@ -510,7 +501,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
           .scores-container {
             background: white;
             border: 1px solid var(--light-gray, #e5e7eb);
-            border-radius: 12px;
+            border-radius: 0;
             overflow: hidden;
           }
 
@@ -553,7 +544,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             width: 100%;
             padding: 10px 12px;
             border: 2px solid var(--light-gray, #e5e7eb);
-            border-radius: 8px;
+            border-radius: 0;
             font-size: 1.25rem;
             font-weight: 600;
             text-align: center;
@@ -592,7 +583,7 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             padding: 12px 16px;
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid var(--success, #22c55e);
-            border-radius: 8px;
+            border-radius: 0;
             color: var(--success, #22c55e);
             font-weight: 600;
           }
@@ -606,33 +597,9 @@ const ScoreEntryModal = ({ match, onClose, onSubmit, isOwner }) => {
             border-top: 1px solid var(--light-gray, #e5e7eb);
           }
 
-          .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-          }
 
-          .btn-outline {
-            background: transparent;
-            border: 1px solid var(--light-gray, #e5e7eb);
-            color: var(--secondary, #1f2937);
-          }
 
-          .btn-outline:hover {
-            background: var(--light-gray, #f3f4f6);
-          }
 
-          .btn-primary {
-            background: var(--primary, #3b82f6);
-            color: white;
-          }
 
           .btn-primary:hover:not(:disabled) {
             background: #2563eb;

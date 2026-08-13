@@ -45,7 +45,7 @@ export const createUserProfile = async (userId, profileData) => {
     
     console.log('Writing user data to Firestore:', userData);
     await setDoc(userRef, userData);
-    console.log('✅ User profile created successfully');
+    console.log(' User profile created successfully');
     
     return { success: true };
   } catch (error) {
@@ -63,11 +63,11 @@ export const getUserProfile = async (userId) => {
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
-      console.log('✅ User profile found');
+      console.log(' User profile found');
       return { id: userSnap.id, ...userSnap.data() };
     }
     
-    console.log('❌ User profile not found');
+    console.log(' User profile not found');
     return null;
   } catch (error) {
     console.error('Error getting user profile:', error);
@@ -1141,7 +1141,7 @@ export const getLeaderboard = async (limit = 10) => {
           elo: userData.elo,
           matchesPlayed: userData.matchesPlayed,
           matchesWon: userData.matchesWon,
-          birthdate: userData.birthdate, // Add this line
+          birthDate: userData.birthDate, // Add this line
           winRate: userData.matchesPlayed > 0 
             ? Math.round((userData.matchesWon / userData.matchesPlayed) * 100) 
             : 0,
@@ -1330,10 +1330,9 @@ export const generateWhatsAppLink = (tournamentId, tournamentName, date) => {
   const baseUrl = window.location.origin;
   const joinUrl = `${baseUrl}/join/${tournamentId}`;
   const message = encodeURIComponent(
-    `🏸 You're invited to ${tournamentName}!\n\n` +
-    `📅 Date: ${date}\n` +
-    `🏆 Join our Wednesday Social Tournament\n\n` +
-    `Click here to confirm your attendance:\n${joinUrl}`
+    `You're invited to ${tournamentName}.\n\n` +
+    `Date: ${date}\n\n` +
+    `Confirm your attendance here:\n${joinUrl}`
   );
   
   return `https://wa.me/?text=${message}`;
