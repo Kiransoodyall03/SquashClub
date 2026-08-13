@@ -1,0 +1,169 @@
+/* =========================================================================
+   DESIGN TOKENS — the only file you edit to rebrand the application.
+   Every colour, size, weight and duration in the app resolves through here.
+
+   HOUSE RULES, enforced by these tokens:
+     - No gradients. Ever. There is no gradient token to reach for.
+     - No glow effects. No coloured shadows. Depth is expressed with borders.
+     - No rounded corners. Every radius is 0.
+     - No emoji anywhere in the interface. Icons come from lucide-react.
+
+   PALETTE STATUS: placeholder pending confirmed Parkview Squash Club values.
+   To rebrand, change only the --color-* block below.
+   ========================================================================= */
+
+:root {
+  /* --- Neutrals -------------------------------------------------------- */
+  --color-ink:            #16191C;  /* primary text, headings */
+  --color-ink-muted:      #4A5259;  /* secondary text */
+  --color-ink-subtle:     #6E767D;  /* labels, captions, disabled */
+
+  --color-page:           #F1F2F3;  /* application background */
+  --color-surface:        #FFFFFF;  /* cards, panels, table bodies */
+  --color-surface-sunken: #F7F8F8;  /* table headers, inset panels */
+
+  --color-border:         #D5D8DB;  /* default 1px rule */
+  --color-border-strong:  #A9AEB3;  /* emphasis rule, focused inputs */
+
+  /* --- Brand ----------------------------------------------------------- */
+  --color-brand:          #0E3A5C;  /* primary actions, active nav, headers */
+  --color-brand-hover:    #0A2C46;
+  --color-brand-on:       #FFFFFF;  /* text on brand fill */
+  --color-brand-wash:     #E8EEF3;  /* selected rows, quiet brand surfaces */
+
+  /* --- Semantic -------------------------------------------------------- */
+  --color-positive:       #1E7A3E;
+  --color-positive-wash:  #E7F2EB;
+  --color-negative:       #B3261E;
+  --color-negative-wash:  #F8E9E8;
+  --color-caution:        #8A6100;
+  --color-caution-wash:   #F7F0E0;
+  --color-info:           #0E3A5C;
+  --color-info-wash:      #E8EEF3;
+
+  /* --- Focus ----------------------------------------------------------- */
+  --color-focus:          #0E3A5C;
+  --focus-ring:           2px solid var(--color-focus);
+  --focus-offset:         2px;
+
+  /* --- Typography ------------------------------------------------------ */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono',
+               Menlo, Consolas, monospace;
+
+  --text-2xs:  0.6875rem;  /* 11px — table micro-labels */
+  --text-xs:   0.75rem;    /* 12px — labels, captions */
+  --text-sm:   0.8125rem;  /* 13px — dense table text */
+  --text-base: 0.9375rem;  /* 15px — body */
+  --text-lg:   1.0625rem;  /* 17px — section headings */
+  --text-xl:   1.375rem;   /* 22px — page headings */
+  --text-2xl:  1.75rem;    /* 28px — hero numbers */
+  --text-3xl:  2.25rem;    /* 36px — landing headline */
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semi:    600;
+  --weight-bold:    700;
+
+  --leading-tight: 1.2;
+  --leading-base:  1.5;
+
+  --tracking-label: 0.08em;  /* uppercase micro-labels */
+  --tracking-tight: -0.01em; /* large headings */
+
+  /* --- Spacing (4px base) ---------------------------------------------- */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.5rem;
+  --space-6:  2rem;
+  --space-7:  3rem;
+  --space-8:  4rem;
+
+  /* --- Geometry -------------------------------------------------------- */
+  --radius:        0;   /* deliberate. do not raise. */
+  --border-width:  1px;
+  --border:        var(--border-width) solid var(--color-border);
+  --border-strong: var(--border-width) solid var(--color-border-strong);
+
+  /* --- Layout ---------------------------------------------------------- */
+  --container-max: 1280px;
+  --nav-height:    56px;
+
+  /* --- Motion ---------------------------------------------------------- */
+  --transition: 120ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --transition: 0ms; }
+}
+
+/* =========================================================================
+   LEGACY ALIASES
+   The pre-overhaul stylesheets referenced the token names below. Rather than
+   find-and-replace across twenty files, they are re-pointed at the new system
+   here. This is what removes every gradient, glow and rounded corner that was
+   expressed through a token — in one place.
+
+   Three of these are deliberately neutered and must stay that way:
+     --gradient-*  resolve to FLAT colours, not gradients
+     --shadow-*    resolve to none
+     --radius-*    resolve to 0
+
+   Retire this block as pages migrate to the .btn / .card / .stat vocabulary.
+   ========================================================================= */
+:root {
+  /* colours */
+  --primary:       var(--color-brand);
+  --primary-dark:  var(--color-brand-hover);
+  --secondary:     var(--color-brand);
+  --accent:        var(--color-brand);
+  --success:       var(--color-positive);
+  --danger:        var(--color-negative);
+  --warning:       var(--color-caution);
+
+  --white:         var(--color-surface);
+  --off-white:     var(--color-page);
+  --light-gray:    var(--color-surface-sunken);
+  --gray:          var(--color-ink-subtle);
+  --dark-gray:     var(--color-ink-muted);
+  --black:         var(--color-ink);
+
+  /* gradients — flattened on purpose */
+  --gradient-primary:   var(--color-brand);
+  --gradient-secondary: var(--color-brand);
+  --gradient-accent:    var(--color-surface-sunken);
+
+  /* shadows — removed on purpose */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
+
+  /* radii — squared on purpose */
+  --radius-sm:   0;
+  --radius-md:   0;
+  --radius-lg:   0;
+  --radius-xl:   0;
+  --radius-full: 0;
+
+  /* type */
+  --font-display: var(--font-sans);
+  --font-body:    var(--font-sans);
+
+  /* spacing */
+  --spacing-xs:  var(--space-1);
+  --spacing-sm:  var(--space-2);
+  --spacing-md:  var(--space-4);
+  --spacing-lg:  var(--space-5);
+  --spacing-xl:  var(--space-6);
+  --spacing-2xl: var(--space-7);
+  --spacing-3xl: var(--space-8);
+
+  /* motion */
+  --transition-fast: var(--transition);
+  --transition-base: var(--transition);
+  --transition-slow: var(--transition);
+}
